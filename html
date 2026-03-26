@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>波段密碼計算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f3f4f6;
+        }
+        .custom-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white w-full max-w-2xl rounded-2xl custom-shadow p-6 md:p-8">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">波段密碼計算器</h1>
+
+        <div class="space-y-5">
+            <!-- 輸入區 -->
+            <div>
+                <label for="stockName" class="block text-sm font-medium text-gray-700 mb-1">股票名稱/代號</label>
+                <input type="text" id="stockName" placeholder="例如：2330 台積電" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label for="currentPrice" class="block text-sm font-medium text-gray-700 mb-1">現價</label>
+                    <input type="number" id="currentPrice" placeholder="輸入現價" step="any"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                </div>
+                <div>
+                    <label for="costPrice" class="block text-sm font-medium text-gray-700 mb-1">法人/主力成本</label>
+                    <input type="number" id="costPrice" placeholder="輸入成本" step="any"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                </div>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="pt-2">
+                <button onclick="calculate()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200">
+                    計算並產出報告
+                </button>
+            </div>
+
+            <!-- 輸出區 -->
+            <div id="outputSection" class="hidden mt-6 pt-6 border-t">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-sm font-medium text-gray-700">輸出結果</label>
+                    <button onclick="copyToClipboard()" id="copyBtn" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-3 rounded-md transition">
+                        複製內容
+                    </button>
+                </div>
+                <textarea id="resultText" readonly rows="12" 
+                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-800 font-mono text-sm resize-y outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 數值格式化，去除多餘小數點
+        const formatNumber = (num) => {
+            return Number(num.toFixed(2));
+        };
+
+        function calculate() {
+            const stockName = document.getElementById('stockName').value.trim() || '未輸入';
+            const currentPriceInput = document.getElementById('currentPrice').value;
+            const costPriceInput = document.getElementById('costPrice').value;
+
+            if (!currentPriceInput || !costPriceInput) {
+                showMessage("請完整輸入現價與成本數值。");
+                return;
+            }
+
+            const currentPrice = parseFloat(currentPriceInput);
+            const costPrice = parseFloat(costPriceInput);
+
+            if (currentPrice < 0 || costPrice < 0) {
+                showMessage("價格與成本不能為負數。");
+                return;
+            }
+
+            // 計算波段密碼
+            const p104 = formatNumber(costPrice * 1.04);
+            const p120 = formatNumber(costPrice * 1.2);
+            const p140 = formatNumber(costPrice * 1.4);
+            const p170 = formatNumber(costPrice * 1.7);
+
+            // 判斷位階邏輯
+            let statusRange = "";
+            let judgement = "";
+
+            if (currentPrice < costPrice) {
+                statusRange = `小於 ${costPrice}`;
+                judgement = "【跌破成本】處於法人收貨盤整或弱勢狀態。";
+            } else if (currentPrice >= costPrice && currentPrice < p104) {
+                statusRange = `${costPrice} ~ ${p104}`;
+                judgement = "【醞釀期】尚未正式發動，待站穩發動點。";
+            } else if (currentPrice >= p104 && currentPrice < p120) {
+                statusRange = `${p104} ~ ${p120}`;
+                judgement = "【第一攻擊區】已發動，朝第一波高點邁進。";
+            } else if (currentPrice >= p120 && currentPrice < p140) {
+                statusRange = `${p120} ~ ${p140}`;
+                judgement = "【第二攻擊區】面臨第一波高點壓力，或正朝第二波邁進。";
+            } else if (currentPrice >= p140 && currentPrice < p170) {
+                statusRange = `${p140} ~ ${p170}`;
+                judgement = "【極端高位區】現價已過高，隨時有下殺風險。";
+            } else if (currentPrice >= p170) {
+                statusRange = `大於等於 ${p170}`;
+                judgement = "【韭菜收割區】已達或超越極限，屬於極度危險區域。";
+            }
+
+            // 組裝純文字報告
+            const report = 
+`• 股票標的： [${stockName}]
+• 輸入數據： 現價 [${currentPrice}] 元 / 成本 [${costPrice}] 元
+• 波段密碼計算：
+  • 發動點（1.04倍）：[${p104}] 元
+  • 第一波高點（1.2倍）：[${p120}] 元
+  • 第二波高點（1.4倍）：[${p140}] 元
+  • 終極韭菜區（1.7倍）：[${p170}] 元
+• 目前位階判定：
+  • 現狀：現價落在 [${statusRange}]
+  • 判定：[${judgement}]`;
+
+            // 顯示結果
+            document.getElementById('resultText').value = report;
+            document.getElementById('outputSection').classList.remove('hidden');
+            
+            // 重置複製按鈕狀態
+            const copyBtn = document.getElementById('copyBtn');
+            copyBtn.innerText = "複製內容";
+            copyBtn.classList.remove('bg-green-100', 'text-green-700');
+            copyBtn.classList.add('bg-gray-100', 'text-gray-700');
+        }
+
+        function copyToClipboard() {
+            const textarea = document.getElementById('resultText');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); 
+            
+            try {
+                document.execCommand('copy');
+                const copyBtn = document.getElementById('copyBtn');
+                copyBtn.innerText = "已複製";
+                copyBtn.classList.remove('bg-gray-100', 'text-gray-700');
+                copyBtn.classList.add('bg-green-100', 'text-green-700');
+            } catch (err) {
+                showMessage("複製失敗，請手動全選並複製。");
+            }
+            
+            // 移除選取狀態
+            window.getSelection().removeAllRanges();
+        }
+
+        // 自製簡易訊息提示框代替 alert
+        function showMessage(msg) {
+            const existingMsg = document.getElementById('custom-msg');
+            if (existingMsg) {
+                existingMsg.remove();
+            }
+
+            const msgDiv = document.createElement('div');
+            msgDiv.id = 'custom-msg';
+            msgDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
+            msgDiv.innerText = msg;
+
+            document.body.appendChild(msgDiv);
+
+            setTimeout(() => {
+                msgDiv.style.opacity = '0';
+                setTimeout(() => msgDiv.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
