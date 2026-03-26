@@ -17,7 +17,7 @@
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <div class="bg-white w-full max-w-2xl rounded-2xl custom-shadow overflow-hidden">
+    <div class="bg-white w-full max-w-5xl rounded-2xl custom-shadow overflow-hidden">
         
         <!-- 分頁切換按鈕 -->
         <div class="flex border-b bg-gray-50">
@@ -32,7 +32,7 @@
         <div class="p-6 md:p-8">
             
             <!-- 分頁 1：計算器 -->
-            <div id="tab-calculator" class="space-y-5 block">
+            <div id="tab-calculator" class="space-y-5 block max-w-2xl mx-auto">
                 <div>
                     <label for="stockName" class="block text-sm font-medium text-gray-700 mb-1">股票名稱/代號</label>
                     <input type="text" id="stockName" placeholder="例如：2330 台積電" 
@@ -74,71 +74,84 @@
             <div id="tab-guide" class="hidden space-y-6 text-gray-800">
                 <h2 class="text-xl font-bold border-b pb-3 text-gray-900">強勢股估算 <span class="text-sm font-normal text-gray-500 ml-1">單純以法人/主力平均成本計算</span></h2>
 
-                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <h3 class="font-bold text-blue-900 mb-2">核心邏輯</h3>
-                    <p class="text-sm text-blue-800 leading-relaxed">法人會去推升「現價比自己成本高」的股票，推上去獲利才多。從低點推上去的過程叫做「收貨盤整」。</p>
-                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-gray-50 p-4 md:p-6 rounded-xl">
+                    <!-- Left Column -->
+                    <div class="lg:col-span-4 space-y-4">
+                        <!-- Input Card -->
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center text-gray-700 font-bold mb-3">
+                                <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                <span>輸入成本資料</span>
+                            </div>
+                            <label class="block text-sm text-gray-500 mb-2">法人/主力 平均成本</label>
+                            <input type="number" id="simpleCostInput" oninput="calculateDashboard()" class="w-full px-4 py-3 text-xl font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="例如：173.40" step="any">
+                        </div>
 
-                <div>
-                    <h3 class="font-bold text-gray-900 mb-2 flex items-center">
-                        <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">要件</span>
-                        選股與四要件
-                    </h3>
-                    <p class="text-sm text-gray-600 mb-3">這套算法專門用於強勢股，進場前請確認符合以下四要件：</p>
-                    <ul class="list-disc pl-5 text-sm space-y-2 text-gray-700">
-                        <li>必須是強勢股（僅限上市櫃強勢股，興櫃不適用）</li>
-                        <li>法人外資或投信持續加碼（至少不減碼）</li>
-                        <li>多頭線型（K線圖往右上角走）</li>
-                        <li>現價比成本高，或是差不多</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="font-bold text-gray-900 mb-3 flex items-center">
-                        <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">公式</span>
-                        關鍵倍數計算與實戰意涵
-                    </h3>
-                    <div class="space-y-3">
-                        <div class="bg-gray-50 p-3 rounded border border-gray-200">
-                            <span class="font-bold text-gray-800">起漲點 (成本 × 1.04)</span>
-                            <p class="text-sm text-gray-600 mt-1">現價 ≥ 成本 × 1.04。站穩此價位代表正式突破盤整，啟動向上趨勢。</p>
-                        </div>
-                        <div class="bg-gray-50 p-3 rounded border border-gray-200">
-                            <span class="font-bold text-gray-800">第一高點 (成本 × 1.2)</span>
-                            <p class="text-sm text-gray-600 mt-1">漲勢抵達此區間易進入休息期，建議在 1.17 至 1.18 倍先行獲利了結。</p>
-                        </div>
-                        <div class="bg-gray-50 p-3 rounded border border-gray-200">
-                            <span class="font-bold text-gray-800">第二高點 (成本 × 1.4)</span>
-                            <p class="text-sm text-gray-600 mt-1">經過短暫回測（約3-5日線）後的再噴發目標，若開盤直接越過此倍數需防下殺。</p>
-                        </div>
-                        <div class="bg-gray-50 p-3 rounded border border-gray-200">
-                            <span class="font-bold text-gray-800">末端高點 (成本 × 1.7)</span>
-                            <p class="text-sm text-gray-600 mt-1">大多頭環境下的極限噴發區，通常是整波行情的終點。</p>
+                        <!-- Rules Card -->
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center text-gray-700 font-bold mb-3">
+                                <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>選股與四要件</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-3">這套算法專門用於<span class="text-red-500 font-bold">強勢股</span>，進場前請確認符合以下四要件：</p>
+                            <ol class="list-decimal pl-5 text-sm space-y-2 text-gray-700 mb-5">
+                                <li>必須是強勢股</li>
+                                <li>法人外資或投信持續加碼 (至少不減碼)</li>
+                                <li>多頭線型 (K線圖往右上角走)</li>
+                                <li>現價比成本高，或是差不多</li>
+                            </ol>
+                            
+                            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                                <div class="text-yellow-700 font-bold text-sm mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                    核心邏輯
+                                </div>
+                                <p class="text-xs text-yellow-800 leading-relaxed">法人會去推升「現價比自己成本高」的股票，推上去獲利才多。從低點推上去的過程叫做「收貨盤整」。</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div>
-                    <h3 class="font-bold text-gray-900 mb-3 flex items-center">
-                        <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">進階</span>
-                        操作進階心法
-                    </h3>
-                    <div class="space-y-4 text-sm text-gray-700">
-                        <div class="flex items-start">
-                            <div class="min-w-[80px] font-bold text-red-600">警示訊號</div>
-                            <div class="flex-1">若買入價格已逼近成本的 1.7 倍，極大機率正處於「韭菜區」，應果斷執行停損或避開。</div>
+                    <!-- Right Column (Cards) -->
+                    <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Card 1.04 -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                            <div class="border-l-4 border-blue-500 p-5 flex-1 flex flex-col">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="bg-blue-50 text-blue-600 text-xs font-bold px-2 py-1 rounded">突破起漲 (x1.04)</span>
+                                    <span class="text-3xl font-mono font-bold text-gray-800" id="dash-104">--</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">當現價站穩這個數字，就會往上移動，站不穩會繼續盤整。想攤平或進場，建議在 1.04 - 1.06 倍間操作。</p>
+                            </div>
                         </div>
-                        <div class="flex items-start">
-                            <div class="min-w-[80px] font-bold text-blue-600">動態調整</div>
-                            <div class="flex-1">法人成本每日變動，計算目標價時應以當日最新成本為準。</div>
+                        <!-- Card 1.20 -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                            <div class="border-l-4 border-emerald-400 p-5 flex-1 flex flex-col">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="bg-emerald-50 text-emerald-600 text-xs font-bold px-2 py-1 rounded">第一波高點 (x1.20)</span>
+                                    <span class="text-3xl font-mono font-bold text-gray-800" id="dash-120">--</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">突破後大概走到這個位置會休息。建議可以在接近此價位時 (例如少掛 1-2 檔) 安全打出獲利了結。</p>
+                            </div>
                         </div>
-                        <div class="flex items-start">
-                            <div class="min-w-[80px] font-bold text-orange-600">趨勢判定</div>
-                            <div class="flex-1">現價若跌破法人成本，代表漲勢結束。必須等待法人成本重新墊高，且現價再次回到 1.04 倍以上才具備進場條件。</div>
+                        <!-- Card 1.40 -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                            <div class="border-l-4 border-amber-400 p-5 flex-1 flex flex-col">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="bg-amber-50 text-amber-600 text-xs font-bold px-2 py-1 rounded">第二波高點 (x1.40)</span>
+                                    <span class="text-3xl font-mono font-bold text-gray-800" id="dash-140">--</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">經歷 3-5 日線盤整後再度上攻的高點。1.4 倍的波浪可能會有好幾次，若突破 1.4 倍才可能走向最後一波。</p>
+                            </div>
                         </div>
-                        <div class="flex items-start">
-                            <div class="min-w-[80px] font-bold text-gray-500">汰弱留強</div>
-                            <div class="flex-1">股價若長期低於法人成本，說明該標的已被主力放棄，不具備追蹤價值。</div>
+                        <!-- Card 1.70 -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                            <div class="border-l-4 border-rose-400 p-5 flex-1 flex flex-col">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="bg-rose-50 text-rose-600 text-xs font-bold px-2 py-1 rounded">最終極限波 (x1.70)</span>
+                                    <span class="text-3xl font-mono font-bold text-gray-800" id="dash-170">--</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">大多頭時第三峰會來得很快，高度最後會在此結束。買在略低於此價位容易變韭菜，應準備停損或等待法人成本重新墊高。</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -267,6 +280,30 @@
             }
             
             window.getSelection().removeAllRanges();
+        }
+
+        // Dashboard 動態計算功能
+        function calculateDashboard() {
+            const inputVal = document.getElementById('simpleCostInput').value;
+            const cost = parseFloat(inputVal);
+
+            const d104 = document.getElementById('dash-104');
+            const d120 = document.getElementById('dash-120');
+            const d140 = document.getElementById('dash-140');
+            const d170 = document.getElementById('dash-170');
+
+            if (isNaN(cost) || cost <= 0) {
+                d104.innerText = '--';
+                d120.innerText = '--';
+                d140.innerText = '--';
+                d170.innerText = '--';
+                return;
+            }
+
+            d104.innerText = (cost * 1.04).toFixed(2);
+            d120.innerText = (cost * 1.20).toFixed(2);
+            d140.innerText = (cost * 1.40).toFixed(2);
+            d170.innerText = (cost * 1.70).toFixed(2);
         }
 
         function showMessage(msg) {
