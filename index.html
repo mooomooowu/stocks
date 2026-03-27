@@ -59,6 +59,10 @@
                     <button onclick="calculate()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200">
                         計算並產出報告
                     </button>
+                    <p class="text-xs text-red-500 text-center mt-3 flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        注意：創新版與興櫃不適用此算法
+                    </p>
                 </div>
 
                 <div id="outputSection" class="hidden mt-6 pt-6 border-t">
@@ -131,7 +135,10 @@
                             <div class="border-l-4 border-emerald-400 p-5 flex-1 flex flex-col">
                                 <div class="flex justify-between items-start mb-2">
                                     <span class="bg-emerald-50 text-emerald-600 text-xs font-bold px-2 py-1 rounded">第一波高點 (x1.20)</span>
-                                    <span class="text-3xl font-mono font-bold text-gray-800" id="dash-120">--</span>
+                                    <div class="text-right">
+                                        <span class="text-3xl font-mono font-bold text-gray-800 block" id="dash-120">--</span>
+                                        <span class="text-xs text-emerald-600 font-mono font-bold block mt-1" id="dash-117-118">先行獲利: -- ~ --</span>
+                                    </div>
                                 </div>
                                 <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">突破後大概走到這個位置會休息。建議可以在接近此價位時 (例如少掛 1-2 檔) 安全打出獲利了結。</p>
                             </div>
@@ -141,7 +148,10 @@
                             <div class="border-l-4 border-amber-400 p-5 flex-1 flex flex-col">
                                 <div class="flex justify-between items-start mb-2">
                                     <span class="bg-amber-50 text-amber-600 text-xs font-bold px-2 py-1 rounded">第二波高點 (x1.40)</span>
-                                    <span class="text-3xl font-mono font-bold text-gray-800" id="dash-140">--</span>
+                                    <div class="text-right">
+                                        <span class="text-3xl font-mono font-bold text-gray-800 block" id="dash-140">--</span>
+                                        <span class="text-xs text-amber-600 font-mono font-bold block mt-1" id="dash-137-138">先行獲利: -- ~ --</span>
+                                    </div>
                                 </div>
                                 <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">經歷 3-5 日線盤整後再度上攻的高點。1.4 倍的波浪可能會有好幾次，若突破 1.4 倍才可能走向最後一波。</p>
                             </div>
@@ -375,7 +385,11 @@
 
             // 計算波段密碼
             const p104 = formatNumber(costPrice * 1.04);
+            const p117 = formatNumber(costPrice * 1.17);
+            const p118 = formatNumber(costPrice * 1.18);
             const p120 = formatNumber(costPrice * 1.2);
+            const p137 = formatNumber(costPrice * 1.37);
+            const p138 = formatNumber(costPrice * 1.38);
             const p140 = formatNumber(costPrice * 1.4);
             const p170 = formatNumber(costPrice * 1.7);
 
@@ -410,7 +424,9 @@
 • 波段密碼計算：
   • 發動點（1.04倍）：[${p104}] 元
   • 第一波高點（1.2倍）：[${p120}] 元
+    - 先行獲利區（1.17~1.18倍）：[${p117}] ~ [${p118}] 元
   • 第二波高點（1.4倍）：[${p140}] 元
+    - 先行獲利區（1.37~1.38倍）：[${p137}] ~ [${p138}] 元
   • 終極韭菜區（1.7倍）：[${p170}] 元
 • 目前位階判定：
   • 現狀：現價落在 [${statusRange}]
@@ -454,12 +470,16 @@
             const d120 = document.getElementById('dash-120');
             const d140 = document.getElementById('dash-140');
             const d170 = document.getElementById('dash-170');
+            const d117_118 = document.getElementById('dash-117-118');
+            const d137_138 = document.getElementById('dash-137-138');
 
             if (isNaN(cost) || cost <= 0) {
                 d104.innerText = '--';
                 d120.innerText = '--';
                 d140.innerText = '--';
                 d170.innerText = '--';
+                if (d117_118) d117_118.innerText = '先行獲利: -- ~ --';
+                if (d137_138) d137_138.innerText = '先行獲利: -- ~ --';
                 return;
             }
 
@@ -467,6 +487,8 @@
             d120.innerText = (cost * 1.20).toFixed(2);
             d140.innerText = (cost * 1.40).toFixed(2);
             d170.innerText = (cost * 1.70).toFixed(2);
+            if (d117_118) d117_118.innerText = `先行獲利: ${(cost * 1.17).toFixed(2)} ~ ${(cost * 1.18).toFixed(2)}`;
+            if (d137_138) d137_138.innerText = `先行獲利: ${(cost * 1.37).toFixed(2)} ~ ${(cost * 1.38).toFixed(2)}`;
         }
 
         // 黃金分割率動態計算
