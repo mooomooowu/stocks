@@ -125,7 +125,10 @@
                             <div class="border-l-4 border-blue-500 p-5 flex-1 flex flex-col">
                                 <div class="flex justify-between items-start mb-2">
                                     <span class="bg-blue-50 text-blue-600 text-xs font-bold px-2 py-1 rounded">突破起漲 (x1.04)</span>
-                                    <span class="text-3xl font-mono font-bold text-gray-800" id="dash-104">--</span>
+                                    <div class="text-right">
+                                        <span class="text-3xl font-mono font-bold text-gray-800 block" id="dash-104">--</span>
+                                        <span class="text-xs text-blue-600 font-mono font-bold block mt-1" id="dash-104-106">進場區間: -- ~ --</span>
+                                    </div>
                                 </div>
                                 <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">當現價站穩這個數字，就會往上移動，站不穩會繼續盤整。想攤平或進場，建議在 1.04 - 1.06 倍間操作。</p>
                             </div>
@@ -470,6 +473,7 @@
             const d120 = document.getElementById('dash-120');
             const d140 = document.getElementById('dash-140');
             const d170 = document.getElementById('dash-170');
+            const d104_106 = document.getElementById('dash-104-106');
             const d117_118 = document.getElementById('dash-117-118');
             const d137_138 = document.getElementById('dash-137-138');
 
@@ -478,6 +482,7 @@
                 d120.innerText = '--';
                 d140.innerText = '--';
                 d170.innerText = '--';
+                if (d104_106) d104_106.innerText = '進場區間: -- ~ --';
                 if (d117_118) d117_118.innerText = '先行獲利: -- ~ --';
                 if (d137_138) d137_138.innerText = '先行獲利: -- ~ --';
                 return;
@@ -487,6 +492,7 @@
             d120.innerText = (cost * 1.20).toFixed(2);
             d140.innerText = (cost * 1.40).toFixed(2);
             d170.innerText = (cost * 1.70).toFixed(2);
+            if (d104_106) d104_106.innerText = `進場區間: ${(cost * 1.04).toFixed(2)} ~ ${(cost * 1.06).toFixed(2)}`;
             if (d117_118) d117_118.innerText = `先行獲利: ${(cost * 1.17).toFixed(2)} ~ ${(cost * 1.18).toFixed(2)}`;
             if (d137_138) d137_138.innerText = `先行獲利: ${(cost * 1.37).toFixed(2)} ~ ${(cost * 1.38).toFixed(2)}`;
         }
