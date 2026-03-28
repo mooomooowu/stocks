@@ -388,6 +388,7 @@
 
             // 計算波段密碼
             const p104 = formatNumber(costPrice * 1.04);
+            const p106 = formatNumber(costPrice * 1.06);
             const p117 = formatNumber(costPrice * 1.17);
             const p118 = formatNumber(costPrice * 1.18);
             const p120 = formatNumber(costPrice * 1.2);
@@ -426,6 +427,7 @@
 • 輸入數據： 現價 [${currentPrice}] 元 / 成本 [${costPrice}] 元
 • 波段密碼計算：
   • 發動點（1.04倍）：[${p104}] 元
+    - 攤平或進場區間（1.04~1.06倍）：[${p104}] ~ [${p106}] 元
   • 第一波高點（1.2倍）：[${p120}] 元
     - 先行獲利區（1.17~1.18倍）：[${p117}] ~ [${p118}] 元
   • 第二波高點（1.4倍）：[${p140}] 元
