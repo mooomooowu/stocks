@@ -27,8 +27,8 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        .matrix-cell { transition: all 0.3s ease; filter: grayscale(100%); opacity: 0.5; }
-        .matrix-cell.active { transform: scale(1.02); filter: grayscale(0%); opacity: 1; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #202124; z-index: 10; }
+        .matrix-cell { transition: all 0.3s ease; filter: grayscale(100%); opacity: 0.5; border: 2px solid transparent; }
+        .matrix-cell.active { transform: scale(1.05); filter: grayscale(0%); opacity: 1; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid #202124; z-index: 10; font-weight: 500; }
         
         .progress-bar-bg { background-color: #f1f3f4; }
         .progress-bar-fill { background-color: #1a73e8; }
@@ -74,7 +74,7 @@
                         <div>
                             <label class="block text-xs font-medium text-[#5f6368] mb-2">查詢標的 (名稱與代號)</label>
                             <div class="flex space-x-2">
-                                <input type="text" id="stockInput" placeholder="輸入代號，例如：2313" 
+                                <input type="text" id="stockInput" placeholder="輸入代號，例如：2330" 
                                     class="flex-1 px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] focus:border-[#1a73e8] outline-none transition text-[15px] bg-[#f8f9fa]">
                                 <button onclick="searchStock()" id="searchBtn" class="bg-[#1a73e8] hover:bg-[#1558d6] text-white font-medium py-2 px-6 rounded-md transition whitespace-nowrap">
                                     查詢
@@ -124,7 +124,7 @@
                             <span class="text-xs font-mono text-[#5f6368] bg-[#f1f3f4] px-2 py-1 rounded">近 60 日技術面</span>
                         </div>
                         
-                        <div class="w-full h-72 bg-white border border-[#dadce0] rounded-md p-2 mb-6">
+                        <div class="w-full h-[320px] bg-white border border-[#dadce0] rounded-md p-2 mb-6">
                             <canvas id="priceChart"></canvas>
                         </div>
 
@@ -188,44 +188,44 @@
                             <!-- 矩陣呈現 -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa]">
-                                    <div class="text-center font-medium text-xs text-[#5f6368] mb-3">收縮狀態 (逆勢操作)</div>
+                                    <div class="text-center font-medium text-xs text-[#5f6368] mb-3 tracking-wide">收縮狀態 (逆勢操作)</div>
                                     <div class="grid grid-cols-2 gap-2 h-28">
-                                        <div id="cell-con-shrink-high" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
-                                            <span class="text-[10px] mb-1 opacity-80">量縮/高位</span>
-                                            <span class="font-medium text-sm">快速賣出</span>
+                                        <div id="cell-con-shrink-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-90">量縮/高位</span>
+                                            <span class="text-sm font-medium">快速賣出</span>
                                         </div>
-                                        <div id="cell-con-expand-high" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
-                                            <span class="text-[10px] mb-1 opacity-80">量大/高位</span>
-                                            <span class="font-medium text-sm">準備賣出</span>
+                                        <div id="cell-con-expand-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-90">量大/高位</span>
+                                            <span class="text-sm font-medium">準備賣出</span>
                                         </div>
-                                        <div id="cell-con-shrink-low" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
-                                            <span class="text-[10px] mb-1 opacity-80">量縮/低位</span>
-                                            <span class="font-medium text-sm">準備買入</span>
+                                        <div id="cell-con-shrink-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-90">量縮/低位</span>
+                                            <span class="text-sm font-medium">準備買入</span>
                                         </div>
-                                        <div id="cell-con-expand-low" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
-                                            <span class="text-[10px] mb-1 opacity-80">量大/低位</span>
-                                            <span class="font-medium text-sm">快速買入</span>
+                                        <div id="cell-con-expand-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-90">量大/低位</span>
+                                            <span class="text-sm font-medium">快速買入</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa]">
-                                    <div class="text-center font-medium text-xs text-[#5f6368] mb-3">擴張狀態 (順勢操作)</div>
+                                    <div class="text-center font-medium text-xs text-[#5f6368] mb-3 tracking-wide">擴張狀態 (順勢操作)</div>
                                     <div class="grid grid-cols-2 gap-2 h-28">
-                                        <div id="cell-exp-shrink-high" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
-                                            <span class="text-[10px] mb-1 opacity-80">量縮/高位</span>
-                                            <span class="font-medium text-sm">準備賣出</span>
+                                        <div id="cell-exp-shrink-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-90">量縮/高位</span>
+                                            <span class="text-sm font-medium">準備賣出</span>
                                         </div>
-                                        <div id="cell-exp-expand-high" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
-                                            <span class="text-[10px] mb-1 opacity-80">量大/高位</span>
-                                            <span class="font-medium text-sm">繼續加碼</span>
+                                        <div id="cell-exp-expand-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-90">量大/高位</span>
+                                            <span class="text-sm font-medium">繼續加碼</span>
                                         </div>
-                                        <div id="cell-exp-shrink-low" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
-                                            <span class="text-[10px] mb-1 opacity-80">量縮/低位</span>
-                                            <span class="font-medium text-sm">繼續加空</span>
+                                        <div id="cell-exp-shrink-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-90">量縮/低位</span>
+                                            <span class="text-sm font-medium">繼續加空</span>
                                         </div>
-                                        <div id="cell-exp-expand-low" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
-                                            <span class="text-[10px] mb-1 opacity-80">量大/低位</span>
-                                            <span class="font-medium text-sm">準備買入</span>
+                                        <div id="cell-exp-expand-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-90">量大/低位</span>
+                                            <span class="text-sm font-medium">準備買入</span>
                                         </div>
                                     </div>
                                 </div>
@@ -329,7 +329,7 @@
                         </div>
                     </div>
 
-                    <!-- 純文字報告複製區 -->
+                    <!-- 文字報告複製區 -->
                     <div class="mt-8 pt-2">
                         <div class="flex justify-between items-center mb-3">
                             <label class="block text-sm font-medium text-[#202124]">文字報告 (可複製分享)</label>
@@ -635,6 +635,60 @@
             });
         }
 
+        // 高穩定度多重代理伺服器輪詢引擎 (Proxy Chain)
+        async function fetchWithProxyRace(targetUrl) {
+            const encodeUrl = encodeURIComponent(targetUrl);
+            const proxies = [
+                { url: `https://api.allorigins.win/get?url=${encodeUrl}`, type: 'allorigins' },
+                { url: `https://api.codetabs.com/v1/proxy?quest=${encodeUrl}`, type: 'raw' },
+                { url: `https://corsproxy.io/?${encodeUrl}`, type: 'raw' }
+            ];
+            
+            for (let p of proxies) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒逾時切換
+                    const res = await fetch(p.url, { cache: 'no-store', signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (res.status === 404) {
+                        return { status: 404 };
+                    }
+                    
+                    if (!res.ok) {
+                        if (p.type === 'allorigins') {
+                             const json = await res.json();
+                             if (json.status && json.status.http_code === 404) return { status: 404 };
+                        }
+                        continue;
+                    }
+
+                    let data;
+                    if (p.type === 'allorigins') {
+                        const json = await res.json();
+                        if(json.contents) {
+                            data = typeof json.contents === 'string' ? JSON.parse(json.contents) : json.contents;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        data = await res.json();
+                    }
+
+                    if (data && data.chart && data.chart.error && data.chart.error.code === 'Not Found') {
+                        return { status: 404 };
+                    }
+                    
+                    if (data && data.chart && data.chart.result && data.chart.result.length > 0) {
+                        return { status: 200, data: data };
+                    }
+                } catch (err) {
+                    console.log(`Proxy ${p.url} failed or timed out (5s), switching...`);
+                }
+            }
+            return { status: 'error' }; 
+        }
+
         async function searchStock() {
             const rawInput = document.getElementById('stockInput').value.trim();
             if(!rawInput) {
@@ -647,46 +701,36 @@
             searchBtn.disabled = true;
 
             let codeInput = rawInput;
-            const match = rawInput.match(/\((.*?)\)/);
+            const match = rawInput.match(/[a-zA-Z0-9]+/g);
             if (match) {
-                codeInput = match[1];
+                const potentialCode = match.find(s => /\d/.test(s));
+                if (potentialCode) {
+                    codeInput = potentialCode;
+                }
             }
 
-            let symbolsToTry = [codeInput];
-            if (!isNaN(codeInput)) {
+            let symbolsToTry = [];
+            if (codeInput.includes('.')) {
+                symbolsToTry = [codeInput];
+            } else {
                 symbolsToTry = [`${codeInput}.TW`, `${codeInput}.TWO`];
-            } else if (!codeInput.includes('.')) {
-                 symbolsToTry = [`${codeInput}.TW`];
             }
 
             let found = false;
             for (let sym of symbolsToTry) {
                 try {
-                    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=6mo`;
-                    const proxies = [
-                        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-                        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-                        `https://corsproxy.io/?${encodeURIComponent(url)}`
-                    ];
+                    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=6mo`;
+                    const result = await fetchWithProxyRace(url);
                     
-                    let parsedData = null;
-                    for (let p of proxies) {
-                        try {
-                            const res = await fetch(p, { cache: 'no-store' });
-                            if (res.ok) {
-                                const json = await res.json();
-                                if (json.chart && json.chart.result && json.chart.result.length > 0) {
-                                    parsedData = json.chart.result[0];
-                                    break;
-                                }
-                            }
-                        } catch (err) {}
+                    if (result.status === 404) {
+                        continue; 
                     }
                     
-                    if (parsedData) {
-                        const price = parsedData.meta.regularMarketPrice;
-                        let name = parsedData.meta.symbol;
-                        if(parsedData.meta.shortName) name = parsedData.meta.shortName;
+                    if (result.status === 200 && result.data) {
+                        const parsedData = result.data;
+                        const price = parsedData.chart.result[0].meta.regularMarketPrice;
+                        let name = parsedData.chart.result[0].meta.symbol;
+                        if(parsedData.chart.result[0].meta.shortName) name = parsedData.chart.result[0].meta.shortName;
 
                         document.getElementById('stockInput').value = `${name} (${codeInput})`;
                         document.getElementById('currentPrice').value = price;
@@ -696,9 +740,9 @@
                         showMessage(`載入成功：${name} (${price})`);
                         found = true;
 
-                        if (parsedData.timestamp && parsedData.indicators.quote[0]) {
-                            const timestamps = parsedData.timestamp;
-                            const quotes = parsedData.indicators.quote[0];
+                        if (parsedData.chart.result[0].timestamp && parsedData.chart.result[0].indicators.quote[0]) {
+                            const timestamps = parsedData.chart.result[0].timestamp;
+                            const quotes = parsedData.chart.result[0].indicators.quote[0];
                             const validData = [];
                             for(let i = 0; i < timestamps.length; i++) {
                                 if (quotes.close[i] !== null && quotes.volume[i] !== null) {
@@ -751,12 +795,12 @@
                         break;
                     }
                 } catch (e) {
-                    console.log("Fetch error for " + sym);
+                    console.log("Fetch iter failed", e);
                 }
             }
 
             if (!found) {
-                showMessage("找不到報價資訊，請確認代號或手動輸入。");
+                showMessage("無法取得報價資料，請確認代號或手動輸入。");
                 document.getElementById('chartSection').classList.add('hidden');
             }
             
@@ -790,6 +834,11 @@
                 return null;
             });
 
+            const volColors = closes.map((c, i) => {
+                if (i === 0) return 'rgba(218, 220, 224, 0.6)';
+                return closes[i] >= opens[i] ? 'rgba(217, 48, 37, 0.6)' : 'rgba(30, 142, 62, 0.6)';
+            });
+
             const ctx = document.getElementById('priceChart').getContext('2d');
             if (window.priceChartInstance) window.priceChartInstance.destroy();
             
@@ -798,13 +847,14 @@
                 data: {
                     labels: dates,
                     datasets: [
-                        { label: '收盤價', data: closes, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, tension: 0.1, order: 2 },
-                        { label: 'MA5 (周線)', data: ma5, borderColor: '#f9ab00', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, tension: 0.1, order: 3 },
-                        { label: 'MA20 (月線)', data: ma20, borderColor: '#1e8e3e', borderWidth: 1.5, pointRadius: 0, tension: 0.1, order: 4 },
-                        { label: '壓力線(近20日高)', data: high20, borderColor: '#d93025', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 5 },
-                        { label: '支撐線(近20日低)', data: low20, borderColor: '#3c4043', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 6 },
-                        { label: '建議做多', data: buySignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#d93025', pointBorderColor: '#d93025', rotation: 0, order: 1 },
-                        { label: '建議停損', data: sellSignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#1e8e3e', pointBorderColor: '#1e8e3e', rotation: 180, order: 0 }
+                        { type: 'bar', label: '成交量', data: vols, backgroundColor: volColors, yAxisID: 'y1', order: 10, barPercentage: 0.8 },
+                        { type: 'line', label: '收盤價', data: closes, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, tension: 0.1, order: 2, yAxisID: 'y' },
+                        { type: 'line', label: 'MA5 (周線)', data: ma5, borderColor: '#f9ab00', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, tension: 0.1, order: 3, yAxisID: 'y' },
+                        { type: 'line', label: 'MA20 (月線)', data: ma20, borderColor: '#1e8e3e', borderWidth: 1.5, pointRadius: 0, tension: 0.1, order: 4, yAxisID: 'y' },
+                        { type: 'line', label: '壓力線(近20日高)', data: high20, borderColor: '#d93025', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 5, yAxisID: 'y' },
+                        { type: 'line', label: '支撐線(近20日低)', data: low20, borderColor: '#3c4043', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 6, yAxisID: 'y' },
+                        { type: 'line', label: '建議做多', data: buySignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#d93025', pointBorderColor: '#d93025', rotation: 0, order: 1, yAxisID: 'y' },
+                        { type: 'line', label: '建議停損', data: sellSignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#1e8e3e', pointBorderColor: '#1e8e3e', rotation: 180, order: 0, yAxisID: 'y' }
                     ]
                 },
                 options: {
@@ -814,7 +864,8 @@
                     plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } },
                     scales: {
                         x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10 } } },
-                        y: { grid: { color: '#f1f3f4' } }
+                        y: { type: 'linear', display: true, position: 'right', grid: { color: '#f1f3f4' } },
+                        y1: { type: 'linear', display: false, position: 'left', min: 0, max: Math.max(...vols) * 4 }
                     }
                 }
             });
@@ -829,7 +880,7 @@
             let klineHtml = "";
 
             if (tLow > yHigh) {
-                klineHtml += "<li>向上跳空缺口：大資金強籌，買盤強勢表現。</li>";
+                klineHtml += "<li>向上跳空缺口：買盤強勢表態，籌碼積極。</li>";
             }
             if (tHigh < yLow) {
                 klineHtml += "<li>向下跳空缺口：賣壓沉重，盤勢偏向弱勢。</li>";
@@ -845,27 +896,27 @@
             let kDesc = "";
 
             if (total === 0) {
-                kType = "一字線"; kDesc = "開盤價即收盤價，多空僵持。";
+                kType = "一字線"; kDesc = "多空陷入僵持狀態。";
             } else if (isRed) {
-                if (upper < total * 0.05 && lower < total * 0.05) { kType = "光頭光腳大陽線"; kDesc = "強勢上漲，買方極度強勢。"; }
-                else if (upper < total * 0.05) { kType = "光頭陽線"; kDesc = "先跌後漲，買方力道較為強勁。"; }
-                else if (lower < total * 0.05) { kType = "光腳陽線"; kDesc = "買方強勢，實體紅K棒越長代表漲勢強勁。"; }
-                else if (lower >= body * 2 && upper <= body) { kType = "陽線錘子"; kDesc = "反轉訊號，多方凝聚，空方力道減弱。"; }
-                else if (upper >= body * 2 && lower <= body) { kType = "陽線倒錘子"; kDesc = "需視位階判斷，高檔遇壓或低檔反轉。"; }
-                else if (body > total * 0.5) { kType = "大陽線"; kDesc = "強勢上漲，實體紅K棒越長代表漲勢越強。"; }
-                else if (upper > body && upper > lower) { kType = "上影線較長的小陽線"; kDesc = "影線大於實體代表多方受挫，反之代表多方強勢。"; }
-                else if (lower > body && lower > upper) { kType = "下影線較長的小陽線"; kDesc = "影線大於實體，代表洗盤後多方勝出。"; }
-                else { kType = "小陽線"; kDesc = "低檔出現較無明顯意義，高檔出現表示買盤減弱。"; }
+                if (upper < total * 0.05 && lower < total * 0.05) { kType = "光頭光腳大陽線"; kDesc = "強勢上漲，買盤極度積極。"; }
+                else if (upper < total * 0.05) { kType = "光頭陽線"; kDesc = "先跌後漲，買方力道強勁。"; }
+                else if (lower < total * 0.05) { kType = "光腳陽線"; kDesc = "買方強勢，實體越長漲勢越穩。"; }
+                else if (lower >= body * 2 && upper <= body) { kType = "陽線錘子"; kDesc = "具備反轉特徵，下檔有撐。"; }
+                else if (upper >= body * 2 && lower <= body) { kType = "陽線倒錘子"; kDesc = "需視位階判斷，留意高檔遇壓。"; }
+                else if (body > total * 0.5) { kType = "大陽線"; kDesc = "強勢上漲，買氣踴躍。"; }
+                else if (upper > body && upper > lower) { kType = "上影線較長的小陽線"; kDesc = "多方上攻受挫。"; }
+                else if (lower > body && lower > upper) { kType = "下影線較長的小陽線"; kDesc = "洗盤後多方勝出。"; }
+                else { kType = "小陽線"; kDesc = "高檔出現需留意買盤力竭。"; }
             } else {
-                if (upper < total * 0.05 && lower < total * 0.05) { kType = "光頭光腳大陰線"; kDesc = "強勢下跌格局，賣方極度強勢。"; }
-                else if (upper < total * 0.05) { kType = "光頭陰線"; kDesc = "高檔區出現代表可能回檔，下跌趨勢出現代表可能反彈。"; }
-                else if (lower < total * 0.05) { kType = "光腳陰線"; kDesc = "空方強勢，實體黑K棒越長代表跌勢強勁。"; }
-                else if (lower >= body * 2 && upper <= body) { kType = "陰線錘子"; kDesc = "出現在高檔區為多轉空訊號，出現在低檔區為空轉多訊號。"; }
-                else if (upper >= body * 2 && lower <= body) { kType = "陰線倒錘子"; kDesc = "反轉訊號，空方凝聚，多方力道減弱。"; }
-                else if (body > total * 0.5) { kType = "大陰線"; kDesc = "強勢下跌格局，實體黑K棒越長代表跌勢越強。"; }
-                else if (upper > body && upper > lower) { kType = "上影線較長的小陰線"; kDesc = "空方主導的盤勢。"; }
-                else if (lower > body && lower > upper) { kType = "下影線較長的小陰線"; kDesc = "多頭弱勢的訊號。"; }
-                else { kType = "小陰線"; kDesc = "多空不明，空方佔優勢。"; }
+                if (upper < total * 0.05 && lower < total * 0.05) { kType = "光頭光腳大陰線"; kDesc = "強勢下跌格局，賣盤沉重。"; }
+                else if (upper < total * 0.05) { kType = "光頭陰線"; kDesc = "高檔區出現代表潛在回檔。"; }
+                else if (lower < total * 0.05) { kType = "光腳陰線"; kDesc = "空方強勢，跌勢強勁。"; }
+                else if (lower >= body * 2 && upper <= body) { kType = "陰線錘子"; kDesc = "高檔為空方訊號，低檔為多方訊號。"; }
+                else if (upper >= body * 2 && lower <= body) { kType = "陰線倒錘子"; kDesc = "空頭凝聚，多方力道減弱。"; }
+                else if (body > total * 0.5) { kType = "大陰線"; kDesc = "強勢下跌格局。"; }
+                else if (upper > body && upper > lower) { kType = "上影線較長的小陰線"; kDesc = "空方主導盤勢。"; }
+                else if (lower > body && lower > upper) { kType = "下影線較長的小陰線"; kDesc = "多頭偏弱表現。"; }
+                else { kType = "小陰線"; kDesc = "多空不明確，空方稍占優勢。"; }
             }
 
             klineHtml += `<li>${kType}：${kDesc}</li>`;
@@ -874,44 +925,78 @@
             const currentVol = vols[vols.length - 1];
             const prevVol = vols[vols.length - 2];
             const prevPrice = closes[closes.length - 2];
-            const isUp = tClose > prevPrice;
-            const isVolUp = currentVol > prevVol;
+            const changePct = ((tClose - prevPrice) / prevPrice) * 100;
+            const volChangePct = ((currentVol - prevVol) / prevVol) * 100;
+            const cMa20 = ma20[ma20.length - 1];
+
+            let pStatus = (changePct > 0.5) ? "價漲" : (changePct < -0.5) ? "價跌" : "價平";
+            let vStatus = "量平";
+            if (volChangePct > 10) vStatus = "量增";
+            else if (volChangePct < -10) {
+                vStatus = (pStatus === "價跌" || pStatus === "價平") ? "量縮" : "量減";
+            }
+
+            let vpTag = pStatus + vStatus;
+            let vpDesc = "";
+            let tagColor = "bg-[#f8f9fa] text-[#5f6368] border-[#dadce0]";
+
+            let trendPhase = "";
+            const distFromMA20 = (tClose - cMa20) / cMa20;
+            if (tClose < cMa20) {
+                trendPhase = "跌勢中";
+            } else if (distFromMA20 > 0.15) {
+                trendPhase = "已漲了一段時間";
+            } else if (distFromMA20 > 0.03 && distFromMA20 <= 0.15) {
+                trendPhase = "漲勢初期";
+            } else {
+                trendPhase = "整理期";
+            }
+
+            if (trendPhase === "整理期") {
+                if (vpTag === "價平量平") { vpDesc = "要大行情還有的等不必急於介入。"; }
+                else { vpDesc = "盤整階段，等待明確突破訊號。"; }
+            } else if (trendPhase === "漲勢初期") {
+                if (vpTag === "價平量增") { vpDesc = "可以懷疑是主力進場宜跟進。"; tagColor = "bg-[#1a73e8] text-white border-[#1a73e8]"; }
+                else if (vpTag === "價平量減" || vpTag === "價平量縮") { vpDesc = "高點將現應注意後勢發展。"; tagColor = "bg-[#f9ab00] text-white border-[#f9ab00]"; }
+                else if (vpTag === "價漲量增") { vpDesc = "表示漲勢已成可買進。"; tagColor = "bg-[#1e8e3e] text-white border-[#1e8e3e]"; }
+                else if (vpTag === "價漲量減" || vpTag === "價漲量縮") { vpDesc = "可能會曇花一現還有得等。"; tagColor = "bg-[#f9ab00] text-white border-[#f9ab00]"; }
+                else if (vpTag === "價漲量平") { vpDesc = "價量背離不會太持久。"; tagColor = "bg-[#d93025] text-white border-[#d93025]"; }
+            } else if (trendPhase === "已漲了一段時間") {
+                if (vpTag === "價平量增") { vpDesc = "股價漲勢暫時受阻但應該尚有高點可期。"; tagColor = "bg-[#1a73e8] text-white border-[#1a73e8]"; }
+                else if (vpTag === "價漲量增") { vpDesc = "如係近期巨量可能是主力出貨徵兆。"; tagColor = "bg-[#d93025] text-white border-[#d93025]"; }
+                else if (vpTag === "價漲量減" || vpTag === "價漲量縮") { vpDesc = "注意行情是否到頂3天內易反轉。"; tagColor = "bg-[#d93025] text-white border-[#d93025]"; }
+                else if (vpTag === "價漲量平") { vpDesc = "行情未立即反轉，仍有待觀察。"; tagColor = "bg-[#f9ab00] text-white border-[#f9ab00]"; }
+            } else if (trendPhase === "跌勢中") {
+                if (vpTag === "價平量增") { vpDesc = "可能已止跌回升可嘗試介入。"; tagColor = "bg-[#1e8e3e] text-white border-[#1e8e3e]"; }
+                else if (vpTag === "價平量減" || vpTag === "價平量縮") { vpDesc = "意謂量縮打底補量成底。"; tagColor = "bg-[#1a73e8] text-white border-[#1a73e8]"; }
+                else if (vpTag === "價跌量平") { vpDesc = "如股價剛跌則上不宜介入；如已跌了一段則可視為初次探底。"; tagColor = "bg-[#f9ab00] text-white border-[#f9ab00]"; }
+                else if (vpTag === "價跌量縮" || vpTag === "價跌量減") { vpDesc = "如股價剛跌則表示跌勢仍進行中；如已跌了一段且量縮到很小則表示底部即將出現。"; tagColor = "bg-[#1a73e8] text-white border-[#1a73e8]"; }
+                else if (vpTag === "價跌量增") { vpDesc = "如股價長期不動則有可能是主力進貨可留意；如已上漲一段則表示跌勢儼然成形後勢不樂觀。"; tagColor = "bg-[#d93025] text-white border-[#d93025]"; }
+            }
+
+            if (!vpDesc) {
+                vpDesc = "量價無明顯極端徵兆，維持原趨勢判斷。";
+            }
 
             const volPriceTag = document.getElementById('volPriceTag');
             const volPriceDesc = document.getElementById('volPriceDesc');
-
-            if (isUp && isVolUp) {
-                volPriceTag.innerText = "價漲量增";
-                volPriceTag.className = "px-3 py-1 rounded-sm text-sm font-medium text-[#d93025] bg-[#fce8e6] border border-[#fad2cf] mr-4 whitespace-nowrap";
-                volPriceDesc.innerText = "買盤積極介入，動能強勁。若處於高檔區需防主力拉高出貨，低檔區則視為突破訊號。";
-            } else if (!isUp && !isVolUp) {
-                volPriceTag.innerText = "價跌量縮";
-                volPriceTag.className = "px-3 py-1 rounded-sm text-sm font-medium text-[#1e8e3e] bg-[#e6f4ea] border border-[#ceead6] mr-4 whitespace-nowrap";
-                volPriceDesc.innerText = "賣壓減輕，屬於良性回檔。測試下方支撐不破可視為重新佈局時機。";
-            } else if (!isUp && isVolUp) {
-                volPriceTag.innerText = "價跌量增";
-                volPriceTag.className = "px-3 py-1 rounded-sm text-sm font-medium text-[#1e8e3e] bg-[#e6f4ea] border border-[#ceead6] mr-4 whitespace-nowrap";
-                volPriceDesc.innerText = "恐慌賣壓湧現，籌碼鬆動。下檔支撐面臨嚴峻考驗，切忌輕易接刀。";
-            } else {
-                volPriceTag.innerText = "價漲量縮";
-                volPriceTag.className = "px-3 py-1 rounded-sm text-sm font-medium text-[#d93025] bg-[#fce8e6] border border-[#fad2cf] mr-4 whitespace-nowrap";
-                volPriceDesc.innerText = "上攻追價意願不足，或籌碼已被主力鎖定。若遇前高壓力需提防反轉。";
-            }
+            volPriceTag.innerText = vpTag;
+            volPriceTag.className = `px-3 py-1 rounded-sm text-sm font-medium mr-4 whitespace-nowrap border ${tagColor}`;
+            volPriceDesc.innerText = vpDesc;
 
             const cMa5 = ma5[ma5.length - 1];
-            const cMa20 = ma20[ma20.length - 1];
             const hAdv = document.getElementById('holderAdvice');
             const eAdv = document.getElementById('entryAdvice');
             
             if (tClose > cMa5 && cMa5 > cMa20) {
-                hAdv.innerText = "股價強勢站上周線，趨勢成型。建議持股續抱，設定跌破周線為出場點以保住利潤。";
-                eAdv.innerText = "趨勢向上，逢回檔不破均線支撐時可伺機佈局。乖離過大請勿盲目追高。";
+                hAdv.innerText = "股價站上周線與月線，多方格局確立。建議持股續抱，設定跌破周線為出場基準以保住利潤。";
+                eAdv.innerText = "趨勢明顯向上，逢回測未破均線支撐具備佈局價值。乖離過大請避免追高，耐心等候量縮拉回。";
             } else if (tClose < cMa20) {
-                hAdv.innerText = "技術面轉弱。為控制下檔風險，建議適度減碼，嚴格執行停損紀律。";
-                eAdv.innerText = "空方勢力掌控中，底部尚不明確。建議空手觀望，靜待落底企穩。";
+                hAdv.innerText = "技術面呈現弱勢。為防範下檔風險擴大，建議適度減碼，嚴守停損紀律以保留資金實力。";
+                eAdv.innerText = "空方掌控盤勢，底部訊號未明。建議維持空手觀望，靜待量縮企穩的落底跡象。";
             } else {
-                hAdv.innerText = "走勢陷入區間震盪。建議繼續觀察，跌破重要支撐位或出現帶量跌破頸線時考慮減碼。";
-                eAdv.innerText = "走勢處於醞釀階段。建議耐心等待量能放大或明確突破訊號出現後進場。";
+                hAdv.innerText = "陷入區間震盪。建議持續觀察關鍵價位，跌破重要支撐或帶量跌破頸線需視情況減碼。";
+                eAdv.innerText = "盤勢尚在醞釀階段。建議耐心等待量能放大或明確的技術面突破訊號出現後，再行評估介入。";
             }
         }
 
@@ -961,35 +1046,34 @@
             const cardBadge = document.getElementById('autoResultBadge');
 
             let title = "", desc = "", badgeText = "";
-            let activeColor = "bg-[#9aa0a6]";
+            let activeColor = "bg-[#f1f3f4]", activeText = "text-white";
 
             if (trend === 'contraction') {
                 badgeText = '逆勢操作';
                 if (vol === 'shrink' && pos === 'high') {
-                    title = '快速賣出'; desc = '盤整高點且量縮，上攻無力，應快速獲利了結。'; activeColor = 'bg-[#1e8e3e]';
+                    title = '快速賣出'; desc = '盤整高點且量縮，上攻無力，宜快速獲利了結。'; activeColor = 'bg-[#d93025]';
                 } else if (vol === 'expand' && pos === 'high') {
-                    title = '準備賣出'; desc = '盤整高點遇壓出量，提防假突破。'; activeColor = 'bg-[#f9ab00]';
+                    title = '準備賣出'; desc = '盤整高點遇壓出量，需提防假突破。'; activeColor = 'bg-[#f9ab00]';
                 } else if (vol === 'shrink' && pos === 'low') {
-                    title = '準備買入'; desc = '盤整低點且殺跌無力，留意止跌訊號。'; activeColor = 'bg-[#f9ab00]';
+                    title = '準備買入'; desc = '盤整低點且殺跌無力，可留意止跌訊號。'; activeColor = 'bg-[#1a73e8]';
                 } else if (vol === 'expand' && pos === 'low') {
-                    title = '快速買入'; desc = '盤整低點有買盤介入，勝率較高。'; activeColor = 'bg-[#d93025]';
+                    title = '快速買入'; desc = '盤整低點有買盤介入，勝率提升。'; activeColor = 'bg-[#1e8e3e]';
                 }
             } else {
-                badgeText = '順勢操作 (追漲殺跌)';
+                badgeText = '順勢操作';
                 if (vol === 'shrink' && pos === 'high') {
-                    title = '準備賣出'; desc = '趨勢高點遇量縮，量價背離，可能反轉。'; activeColor = 'bg-[#f9ab00]';
+                    title = '準備賣出'; desc = '趨勢高點遇量縮，量價背離具反轉風險。'; activeColor = 'bg-[#f9ab00]';
                 } else if (vol === 'expand' && pos === 'high') {
-                    title = '繼續加碼'; desc = '趨勢高點且量大，多頭強勢，順勢擴大部位。'; activeColor = 'bg-[#d93025]';
+                    title = '繼續加碼'; desc = '趨勢高點且量大，多頭強勢，可順勢擴大部位。'; activeColor = 'bg-[#1e8e3e]';
                 } else if (vol === 'shrink' && pos === 'low') {
-                    title = '繼續加空'; desc = '趨勢低點且量縮，空頭格局，不宜逆勢做多。'; activeColor = 'bg-[#1e8e3e]';
+                    title = '繼續加空'; desc = '趨勢低點且量縮，空頭格局成型。'; activeColor = 'bg-[#d93025]';
                 } else if (vol === 'expand' && pos === 'low') {
-                    title = '準備買入'; desc = '趨勢低點遇恐慌殺出量，醞釀跌深反彈。'; activeColor = 'bg-[#f9ab00]';
+                    title = '準備買入'; desc = '趨勢低點遇恐慌殺出量，醞釀反彈契機。'; activeColor = 'bg-[#1a73e8]';
                 }
             }
 
             if(targetEl) {
-                const textColor = activeColor === 'bg-[#f9ab00]' ? 'text-gray-900' : 'text-white';
-                targetEl.className = `matrix-cell ${activeColor} ${textColor} rounded-md flex flex-col items-center justify-center p-2 shadow-md transform scale-105 transition-all z-10`;
+                targetEl.className = `matrix-cell ${activeColor} ${activeText} rounded-md flex flex-col items-center justify-center p-2 shadow-md transform scale-105 transition-all z-10 font-bold`;
             }
 
             cardTitle.innerText = title;
