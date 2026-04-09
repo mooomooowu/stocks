@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>波段密碼計算系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: "Roboto", "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
@@ -27,7 +28,7 @@
             scrollbar-width: none;
         }
         .matrix-cell { transition: all 0.3s ease; }
-        .matrix-cell.active { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 10; }
+        .matrix-cell.active { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10; border: 2px solid #202124; }
         
         .progress-bar-bg { background-color: #f1f3f4; }
         .progress-bar-fill { background-color: #1a73e8; }
@@ -71,7 +72,7 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-[#5f6368] mb-2">標的 (名稱與代號)</label>
+                            <label class="block text-xs font-medium text-[#5f6368] mb-2">查詢標的 (名稱與代號)</label>
                             <div class="flex space-x-2">
                                 <input type="text" id="stockInput" placeholder="輸入代號，例如：2313" 
                                     class="flex-1 px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] focus:border-[#1a73e8] outline-none transition text-[15px] bg-[#f8f9fa]">
@@ -113,14 +114,37 @@
                     </div>
                 </div>
 
-                <!-- 視覺化分析結果區 (預設隱藏) -->
+                <!-- 視覺化分析結果區 -->
                 <div id="visualOutput" class="hidden animate-[fadeIn_0.3s_ease-out] bg-white space-y-6">
+
+                    <!-- 走勢圖與量價判定 -->
+                    <div id="chartSection" class="hidden google-card p-5 md:p-6">
+                        <div class="flex items-center justify-between mb-4 border-b border-[#dadce0] pb-3">
+                            <h3 class="text-[16px] font-medium text-[#202124]">近期走勢圖與支撐壓力</h3>
+                            <span class="text-xs font-mono text-[#5f6368] bg-[#f1f3f4] px-2 py-1 rounded">近 60 日技術面</span>
+                        </div>
+                        
+                        <div class="w-full h-64 bg-white border border-[#dadce0] rounded-md p-2 mb-6">
+                            <canvas id="priceChart"></canvas>
+                        </div>
+
+                        <!-- 量價關係建議 -->
+                        <h3 class="text-[14px] font-medium text-[#202124] mb-3">量價關係判定</h3>
+                        <div class="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-4 flex items-start">
+                            <div id="volPriceTag" class="px-3 py-1 rounded-sm text-sm font-medium text-white mr-4 whitespace-nowrap">
+                                --
+                            </div>
+                            <div class="text-sm text-[#3c4043] leading-relaxed" id="volPriceDesc">
+                                --
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- 1. 市場狀態決策矩陣 -->
                     <div class="google-card p-5 md:p-6">
                         <div class="flex items-center justify-between mb-4 border-b border-[#dadce0] pb-3">
                             <h3 class="text-[16px] font-medium text-[#202124]">市場狀態決策矩陣</h3>
-                            <span class="text-xs font-mono text-[#5f6368] bg-[#f1f3f4] px-2 py-1 rounded" id="matrixDetectionLabel">手動設定</span>
+                            <span class="text-xs font-mono text-[#5f6368] bg-[#f1f3f4] px-2 py-1 rounded" id="matrixDetectionLabel">自動判定</span>
                         </div>
 
                         <div id="autoStateWrapper">
@@ -139,47 +163,47 @@
                                 <input type="hidden" id="matrixPosition" value="high">
                             </div>
 
-                            <!-- 矩陣呈現 -->
+                            <!-- 矩陣呈現 (參考附圖1與附圖5設計邏輯) -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="border border-[#dadce0] rounded-md p-3 bg-white">
-                                    <div class="text-center font-medium text-xs text-[#5f6368] mb-3 tracking-wide">收縮狀態 (逆勢操作)</div>
-                                    <div class="grid grid-cols-2 gap-2 h-24">
-                                        <div id="cell-con-shrink-high" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
-                                            <span class="text-[10px] mb-1">量縮/高位</span>
-                                            <span class="font-medium text-sm tracking-wide">快速賣出</span>
+                                <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa]">
+                                    <div class="text-center font-medium text-xs text-[#5f6368] mb-3">收縮狀態 (逆勢操作)</div>
+                                    <div class="grid grid-cols-2 gap-2 h-28">
+                                        <div id="cell-con-shrink-high" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-80">量縮/高位</span>
+                                            <span class="font-medium text-sm">快速賣出</span>
                                         </div>
-                                        <div id="cell-con-expand-high" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
-                                            <span class="text-[10px] mb-1">量大/高位</span>
-                                            <span class="font-medium text-sm tracking-wide">準備賣出</span>
+                                        <div id="cell-con-expand-high" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-80">量大/高位</span>
+                                            <span class="font-medium text-sm">準備賣出</span>
                                         </div>
-                                        <div id="cell-con-shrink-low" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
-                                            <span class="text-[10px] mb-1">量縮/低位</span>
-                                            <span class="font-medium text-sm tracking-wide">準備買入</span>
+                                        <div id="cell-con-shrink-low" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-80">量縮/低位</span>
+                                            <span class="font-medium text-sm">準備買入</span>
                                         </div>
-                                        <div id="cell-con-expand-low" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
-                                            <span class="text-[10px] mb-1">量大/低位</span>
-                                            <span class="font-medium text-sm tracking-wide">快速買入</span>
+                                        <div id="cell-con-expand-low" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-80">量大/低位</span>
+                                            <span class="font-medium text-sm">快速買入</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="border border-[#dadce0] rounded-md p-3 bg-white">
-                                    <div class="text-center font-medium text-xs text-[#5f6368] mb-3 tracking-wide">擴張狀態 (順勢操作)</div>
-                                    <div class="grid grid-cols-2 gap-2 h-24">
-                                        <div id="cell-exp-shrink-high" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
-                                            <span class="text-[10px] mb-1">量縮/高位</span>
-                                            <span class="font-medium text-sm tracking-wide">準備賣出</span>
+                                <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa]">
+                                    <div class="text-center font-medium text-xs text-[#5f6368] mb-3">擴張狀態 (順勢操作)</div>
+                                    <div class="grid grid-cols-2 gap-2 h-28">
+                                        <div id="cell-exp-shrink-high" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-80">量縮/高位</span>
+                                            <span class="font-medium text-sm">準備賣出</span>
                                         </div>
-                                        <div id="cell-exp-expand-high" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
-                                            <span class="text-[10px] mb-1">量大/高位</span>
-                                            <span class="font-medium text-sm tracking-wide">繼續加碼</span>
+                                        <div id="cell-exp-expand-high" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-80">量大/高位</span>
+                                            <span class="font-medium text-sm">繼續加碼</span>
                                         </div>
-                                        <div id="cell-exp-shrink-low" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
-                                            <span class="text-[10px] mb-1">量縮/低位</span>
-                                            <span class="font-medium text-sm tracking-wide">繼續加空</span>
+                                        <div id="cell-exp-shrink-low" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-80">量縮/低位</span>
+                                            <span class="font-medium text-sm">繼續加空</span>
                                         </div>
-                                        <div id="cell-exp-expand-low" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
-                                            <span class="text-[10px] mb-1">量大/低位</span>
-                                            <span class="font-medium text-sm tracking-wide">準備買入</span>
+                                        <div id="cell-exp-expand-low" class="matrix-cell bg-[#e8eaed] text-[#5f6368] rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                            <span class="text-[10px] mb-1 opacity-80">量大/低位</span>
+                                            <span class="font-medium text-sm">準備買入</span>
                                         </div>
                                     </div>
                                 </div>
@@ -255,7 +279,7 @@
                     <!-- 純文字報告複製區 -->
                     <div class="mt-8 pt-2">
                         <div class="flex justify-between items-center mb-3">
-                            <label class="block text-sm font-medium text-[#202124]">純文字報告 (可複製分享)</label>
+                            <label class="block text-sm font-medium text-[#202124]">文字報告 (可複製分享)</label>
                             <button onclick="copyToClipboard()" id="copyBtn" class="text-xs bg-[#f8f9fa] hover:bg-[#e8eaed] border border-[#dadce0] text-[#1a73e8] py-2 px-4 rounded-md transition font-medium">
                                 複製內容
                             </button>
@@ -344,7 +368,7 @@
                                     <span class="text-3xl font-mono font-medium text-[#202124] block" id="dash-170">--</span>
                                 </div>
                             </div>
-                            <p class="text-sm text-[#5f6368] leading-relaxed">大多頭時第三峰會來得很快，高度最後會在此結束。買在略低於此價位容易變韭菜，應準備停損或等待法人成本重新墊高。</p>
+                            <p class="text-sm text-[#5f6368] leading-relaxed">大多頭時第三峰會來得很快，高度最後會在此結束。買在略低於此價位容易套牢，應準備停損或等待法人成本重新墊高。</p>
                         </div>
                     </div>
 
@@ -526,7 +550,7 @@
     </div>
 
     <script>
-        let globalHistoricalData = [];
+        let globalHistoricalData = { date: [], close: [], volume: [], ma5: [], ma20: [], high20: [], low20: [] };
 
         function switchTab(tabId) {
             const tabs = ['calculator', 'guide', 'golden', 'rr-ratio', 'dehydrate'];
@@ -549,9 +573,20 @@
 
         const formatNumber = (num) => Number(num.toFixed(2));
 
+        function getMA(data, days) {
+            return data.map((val, i, arr) => {
+                if (i < days - 1) return null;
+                const slice = arr.slice(i - days + 1, i + 1);
+                return slice.reduce((a, b) => a + b, 0) / days;
+            });
+        }
+
         async function searchStock() {
             const rawInput = document.getElementById('stockInput').value.trim();
-            if(!rawInput) return showMessage("請輸入股票名稱或代號");
+            if(!rawInput) {
+                showMessage("請輸入股票名稱或代號");
+                return;
+            }
 
             const searchBtn = document.getElementById('searchBtn');
             searchBtn.innerText = "查詢中...";
@@ -573,7 +608,7 @@
             let found = false;
             for (let sym of symbolsToTry) {
                 try {
-                    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=1mo`;
+                    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=3mo`;
                     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
                     const res = await fetch(proxyUrl);
                     if(!res.ok) continue;
@@ -601,10 +636,45 @@
                             const validData = [];
                             for(let i = 0; i < timestamps.length; i++) {
                                 if (quotes.close[i] !== null && quotes.volume[i] !== null) {
-                                    validData.push({ close: quotes.close[i], volume: quotes.volume[i] });
+                                    validData.push({ 
+                                        date: new Date(timestamps[i] * 1000).toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'}),
+                                        close: quotes.close[i], 
+                                        high: quotes.high[i],
+                                        low: quotes.low[i],
+                                        volume: quotes.volume[i] 
+                                    });
                                 }
                             }
-                            globalHistoricalData = validData.slice(-20);
+                            
+                            const fullCloses = validData.map(d => d.close);
+                            const ma5Full = getMA(fullCloses, 5);
+                            const ma20Full = getMA(fullCloses, 20);
+
+                            const last60 = validData.slice(-60);
+                            const last60Ma5 = ma5Full.slice(-60);
+                            const last60Ma20 = ma20Full.slice(-60);
+                            
+                            const high20Arr = [];
+                            const low20Arr = [];
+                            for(let i = 0; i < last60.length; i++) {
+                                const endIdx = validData.length - 60 + i;
+                                const startIdx = Math.max(0, endIdx - 19);
+                                const windowData = validData.slice(startIdx, endIdx + 1);
+                                high20Arr.push(Math.max(...windowData.map(d => d.high)));
+                                low20Arr.push(Math.min(...windowData.map(d => d.low)));
+                            }
+
+                            globalHistoricalData = {
+                                date: last60.map(d => d.date),
+                                close: last60.map(d => d.close),
+                                volume: last60.map(d => d.volume),
+                                ma5: last60Ma5,
+                                ma20: last60Ma20,
+                                high20: high20Arr,
+                                low20: low20Arr
+                            };
+                            
+                            renderChartAndVolPrice();
                             runAutoDetection();
                         }
                         break;
@@ -616,28 +686,102 @@
 
             if (!found) {
                 showMessage("找不到報價資訊，請確認代號或手動輸入。");
+                document.getElementById('chartSection').classList.add('hidden');
             }
             
             searchBtn.innerText = "查詢";
             searchBtn.disabled = false;
         }
 
+        function renderChartAndVolPrice() {
+            if (globalHistoricalData.close.length < 20) return;
+            document.getElementById('chartSection').classList.remove('hidden');
+
+            const dates = globalHistoricalData.date;
+            const closes = globalHistoricalData.close;
+            const ma5 = globalHistoricalData.ma5;
+            const ma20 = globalHistoricalData.ma20;
+            const high20 = globalHistoricalData.high20;
+            const low20 = globalHistoricalData.low20;
+            const vols = globalHistoricalData.volume;
+
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            if (window.priceChartInstance) window.priceChartInstance.destroy();
+            
+            window.priceChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        { label: '收盤價', data: closes, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, tension: 0.1 },
+                        { label: 'MA5 (周線)', data: ma5, borderColor: '#f9ab00', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, tension: 0.1 },
+                        { label: 'MA20 (月線)', data: ma20, borderColor: '#1e8e3e', borderWidth: 1.5, pointRadius: 0, tension: 0.1 },
+                        { label: '壓力線(近20日高)', data: high20, borderColor: '#d93025', borderWidth: 1, borderDash: [3, 3], pointRadius: 0 },
+                        { label: '支撐線(近20日低)', data: low20, borderColor: '#34a853', borderWidth: 1, borderDash: [3, 3], pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10 } } },
+                        y: { grid: { color: '#f1f3f4' } }
+                    }
+                }
+            });
+
+            // 量價關係判定
+            const currentVol = vols[vols.length - 1];
+            const prevVol = vols[vols.length - 2];
+            const currentPrice = closes[closes.length - 1];
+            const prevPrice = closes[closes.length - 2];
+
+            const isUp = currentPrice > prevPrice;
+            const isVolUp = currentVol > prevVol;
+
+            const volPriceTag = document.getElementById('volPriceTag');
+            const volPriceDesc = document.getElementById('volPriceDesc');
+
+            if (isUp && isVolUp) {
+                volPriceTag.innerText = "價漲量增";
+                volPriceTag.className = "px-3 py-1 rounded-sm text-sm font-medium text-[#d93025] bg-[#fce8e6] border border-[#fad2cf] mr-4 whitespace-nowrap";
+                volPriceDesc.innerText = "多方趨勢格局，量價配合良好，買盤推升力道強勁。";
+            } else if (!isUp && !isVolUp) {
+                volPriceTag.innerText = "價跌量縮";
+                volPriceTag.className = "px-3 py-1 rounded-sm text-sm font-medium text-[#1e8e3e] bg-[#e6f4ea] border border-[#ceead6] mr-4 whitespace-nowrap";
+                volPriceDesc.innerText = "多方趨勢回檔，賣壓並未大量湧現，屬良性拉回。";
+            } else if (!isUp && isVolUp) {
+                volPriceTag.innerText = "價跌量增";
+                volPriceTag.className = "px-3 py-1 rounded-sm text-sm font-medium text-[#1e8e3e] bg-[#e6f4ea] border border-[#ceead6] mr-4 whitespace-nowrap";
+                volPriceDesc.innerText = "空方趨勢成型，殺盤帶量，籌碼出現鬆動。";
+            } else {
+                volPriceTag.innerText = "價漲量縮";
+                volPriceTag.className = "px-3 py-1 rounded-sm text-sm font-medium text-[#d93025] bg-[#fce8e6] border border-[#fad2cf] mr-4 whitespace-nowrap";
+                volPriceDesc.innerText = "空方趨勢反彈，上攻缺乏追價買盤，需提防後續賣壓。";
+            }
+        }
+
         function runAutoDetection() {
-            const data = globalHistoricalData;
-            if(data.length < 5) return; 
+            const closes = globalHistoricalData.close;
+            const vols = globalHistoricalData.volume;
+            if(closes.length < 5) return; 
 
-            const currentPrice = data[data.length - 1].close;
-            const currentVol = data[data.length - 1].volume;
+            const currentPrice = closes[closes.length - 1];
+            const currentVol = vols[vols.length - 1];
 
-            const max20 = Math.max(...data.map(d => d.close));
-            const min20 = Math.min(...data.map(d => d.close));
+            const last20 = closes.slice(-20);
+            const max20 = Math.max(...last20);
+            const min20 = Math.min(...last20);
             const midPoint = (max20 + min20) / 2;
             const position = currentPrice >= midPoint ? 'high' : 'low';
 
-            const avgVol = data.reduce((a,b) => a + b.volume, 0) / data.length;
+            const last20Vols = vols.slice(-20);
+            const avgVol = last20Vols.reduce((a,b) => a+b, 0) / last20Vols.length;
             const volumeState = currentVol > avgVol ? 'expand' : 'shrink';
             
-            const price5DaysAgo = data[Math.max(0, data.length - 5)].close;
+            const price5DaysAgo = closes[Math.max(0, closes.length - 5)];
             const trend = Math.abs((currentPrice - price5DaysAgo) / price5DaysAgo) > 0.02 ? 'expansion' : 'contraction';
 
             document.getElementById('matrixTrend').value = trend;
@@ -654,7 +798,7 @@
             const pos = document.getElementById('matrixPosition').value;
 
             document.querySelectorAll('.matrix-cell').forEach(el => {
-                el.className = 'matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1 border border-transparent transition-all';
+                el.className = 'matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-2 border border-transparent transition-all';
             });
 
             let targetId = `cell-${trend === 'contraction' ? 'con' : 'exp'}-${vol}-${pos}`;
@@ -683,7 +827,7 @@
                 if (vol === 'shrink' && pos === 'high') {
                     title = '準備賣出'; desc = '趨勢高點遇量縮，量價背離，隨時可能反轉。'; activeColor = 'bg-[#f9ab00]';
                 } else if (vol === 'expand' && pos === 'high') {
-                    title = '繼續加碼'; desc = '趨勢高點且量大，多頭強勢，可順勢擴大部位。'; activeColor = 'bg-[#1a73e8]';
+                    title = '繼續加碼'; desc = '趨勢高點且量大，多頭強勢，可順勢擴大部位。'; activeColor = 'bg-[#1e8e3e]';
                 } else if (vol === 'shrink' && pos === 'low') {
                     title = '繼續加空'; desc = '趨勢低點且量縮，空頭格局，不宜逆勢做多。'; activeColor = 'bg-[#d93025]';
                 } else if (vol === 'expand' && pos === 'low') {
@@ -693,7 +837,7 @@
 
             if(targetEl) {
                 const textColor = activeColor === 'bg-[#f9ab00]' ? 'text-gray-900' : 'text-white';
-                targetEl.className = `matrix-cell ${activeColor} ${textColor} rounded-md flex flex-col items-center justify-center p-1 shadow-md transform scale-105 transition-all z-10`;
+                targetEl.className = `matrix-cell ${activeColor} ${textColor} rounded-md flex flex-col items-center justify-center p-2 shadow-md transform scale-105 transition-all z-10`;
             }
 
             cardTitle.innerText = title;
@@ -817,7 +961,7 @@
                 document.getElementById('progressFill').style.width = `${progressPct}%`;
             }, 100);
 
-            if (globalHistoricalData.length === 0) {
+            if (!globalHistoricalData || globalHistoricalData.length === 0) {
                 document.getElementById('matrixPosition').value = currentPrice > p120 ? 'high' : 'low';
                 updateMatrix();
             }
