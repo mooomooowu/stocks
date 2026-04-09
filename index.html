@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>波段密碼計算器</title>
+    <title>波段密碼計算系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f3f4f6;
+            font-family: "Roboto", "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #202124;
         }
-        .custom-shadow {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+        .google-shadow {
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
         }
-        /* 自訂卷軸隱藏，保持頁籤列乾淨 */
+        .google-card {
+            background-color: #ffffff;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+        }
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -21,408 +26,471 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        .matrix-cell { transition: all 0.3s ease; }
+        .matrix-cell.active { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 10; }
+        
+        .progress-bar-bg { background-color: #f1f3f4; }
+        .progress-bar-fill { background-color: #1a73e8; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-2 md:p-4">
 
-    <div class="bg-white w-full max-w-5xl rounded-2xl custom-shadow overflow-hidden">
+    <div class="bg-white w-full max-w-5xl rounded-lg google-shadow overflow-hidden">
         
         <!-- 分頁切換按鈕 -->
-        <div class="flex border-b bg-gray-50 overflow-x-auto hide-scrollbar whitespace-nowrap">
-            <button onclick="switchTab('calculator')" id="btn-calculator" class="flex-1 min-w-[120px] px-2 py-4 text-center text-sm font-semibold text-blue-600 border-b-2 border-blue-600 transition bg-white">
+        <div class="flex border-b border-[#dadce0] bg-[#f8f9fa] overflow-x-auto hide-scrollbar whitespace-nowrap">
+            <button onclick="switchTab('calculator')" id="btn-calculator" class="flex-1 min-w-[120px] px-2 py-3 text-center text-sm font-medium text-[#1a73e8] border-b-2 border-[#1a73e8] transition bg-white">
                 波段密碼計算
             </button>
-            <button onclick="switchTab('guide')" id="btn-guide" class="flex-1 min-w-[120px] px-2 py-4 text-center text-sm font-semibold text-gray-500 hover:text-gray-700 border-b-2 border-transparent transition">
+            <button onclick="switchTab('guide')" id="btn-guide" class="flex-1 min-w-[120px] px-2 py-3 text-center text-sm font-medium text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] border-b-2 border-transparent transition">
                 強勢股指南
             </button>
-            <button onclick="switchTab('golden')" id="btn-golden" class="flex-1 min-w-[120px] px-2 py-4 text-center text-sm font-semibold text-gray-500 hover:text-gray-700 border-b-2 border-transparent transition">
+            <button onclick="switchTab('golden')" id="btn-golden" class="flex-1 min-w-[120px] px-2 py-3 text-center text-sm font-medium text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] border-b-2 border-transparent transition">
                 黃金分割率
             </button>
-            <button onclick="switchTab('rr-ratio')" id="btn-rr-ratio" class="flex-1 min-w-[120px] px-2 py-4 text-center text-sm font-semibold text-gray-500 hover:text-gray-700 border-b-2 border-transparent transition">
+            <button onclick="switchTab('rr-ratio')" id="btn-rr-ratio" class="flex-1 min-w-[120px] px-2 py-3 text-center text-sm font-medium text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] border-b-2 border-transparent transition">
                 賺賠比試算
             </button>
-            <button onclick="switchTab('dehydrate')" id="btn-dehydrate" class="flex-1 min-w-[120px] px-2 py-4 text-center text-sm font-semibold text-gray-500 hover:text-gray-700 border-b-2 border-transparent transition">
+            <button onclick="switchTab('dehydrate')" id="btn-dehydrate" class="flex-1 min-w-[120px] px-2 py-3 text-center text-sm font-medium text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] border-b-2 border-transparent transition">
                 脫水淨利計算
             </button>
         </div>
 
-        <div class="p-6 md:p-8">
+        <div class="p-4 md:p-6 bg-white">
             
-            <!-- 分頁 1：計算器 -->
-            <div id="tab-calculator" class="space-y-5 block max-w-2xl mx-auto">
-                <div>
-                    <label for="stockName" class="block text-sm font-medium text-gray-700 mb-1">股票名稱/代號</label>
-                    <input type="text" id="stockName" placeholder="例如：2330 台積電" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            <!-- 分頁 1：波段密碼計算器 -->
+            <div id="tab-calculator" class="space-y-6 block max-w-4xl mx-auto">
+                
+                <div class="text-center mb-6">
+                    <h1 class="text-2xl font-medium text-[#202124] mb-2">波段密碼計算系統</h1>
+                    <p class="text-sm text-[#5f6368]">查詢標的帶入股價，輸入外資成本判定多空狀態與關卡目標</p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label for="currentPrice" class="block text-sm font-medium text-gray-700 mb-1">現價</label>
-                        <input type="number" id="currentPrice" placeholder="輸入現價" step="any"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                <!-- 輸入區 -->
+                <div class="google-card p-5 space-y-5">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-[#5f6368] mb-2">標的 (名稱與代號)</label>
+                            <div class="flex space-x-2">
+                                <input type="text" id="stockInput" placeholder="輸入代號，例如：2313" 
+                                    class="flex-1 px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] focus:border-[#1a73e8] outline-none transition text-[15px] bg-[#f8f9fa]">
+                                <button onclick="searchStock()" id="searchBtn" class="bg-[#1a73e8] hover:bg-[#1558d6] text-white font-medium py-2 px-6 rounded-md transition whitespace-nowrap">
+                                    查詢
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#f8f9fa] p-3 rounded-md border border-[#dadce0] flex flex-col justify-center">
+                            <label class="block text-xs font-medium text-[#5f6368] mb-1">當前股價 (現價)</label>
+                            <div class="flex items-center text-[#202124] text-xl font-medium">
+                                <span class="mr-2 text-[#5f6368]">$</span>
+                                <input type="number" id="currentPrice" placeholder="0.00" step="any"
+                                    class="w-full bg-transparent border-none outline-none text-[#202124] font-mono text-2xl p-0">
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label for="costPrice" class="block text-sm font-medium text-gray-700 mb-1">法人/主力成本</label>
-                        <input type="number" id="costPrice" placeholder="輸入成本" step="any"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+
+                    <div class="bg-[#e8f0fe] p-4 rounded-md border border-[#d2e3fc]">
+                        <label class="block text-xs font-medium text-[#1a73e8] mb-2 flex items-center">
+                            外資/主力 平均成本
+                            <span class="ml-2 text-[10px] font-medium bg-[#d2e3fc] text-[#1a73e8] px-2 py-0.5 rounded-sm">必填</span>
+                        </label>
+                        <div class="flex items-center text-[#202124] text-xl font-medium">
+                            <span class="mr-2 text-[#5f6368]">$</span>
+                            <input type="number" id="costPrice" placeholder="輸入均價成本" step="any"
+                                class="w-full bg-transparent border-none outline-none text-[#202124] font-mono text-2xl p-0">
+                        </div>
                     </div>
-                </div>
 
-                <div class="pt-2">
-                    <button onclick="calculate()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200">
-                        計算並產出報告
-                    </button>
-                    <p class="text-xs text-red-500 text-center mt-3 flex items-center justify-center">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        注意：創新版與興櫃不適用此算法
-                    </p>
-                </div>
-
-                <div id="outputSection" class="hidden mt-6 pt-6 border-t">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="block text-sm font-medium text-gray-700">輸出結果</label>
-                        <button onclick="copyToClipboard()" id="copyBtn" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-3 rounded-md transition">
-                            複製內容
+                    <div class="pt-2">
+                        <button onclick="calculate()" class="w-full bg-[#202124] hover:bg-[#3c4043] text-white font-medium py-3 px-4 rounded-md transition duration-200 text-[15px]">
+                            執行運算
                         </button>
+                        <p class="text-xs text-[#5f6368] text-center mt-3">
+                            注意：創新版與興櫃市場因波動限制不同，不適用此演算法
+                        </p>
                     </div>
-                    <textarea id="resultText" readonly rows="13" 
-                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-800 font-mono text-sm resize-y outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+                </div>
+
+                <!-- 視覺化分析結果區 (預設隱藏) -->
+                <div id="visualOutput" class="hidden animate-[fadeIn_0.3s_ease-out] bg-white space-y-6">
+
+                    <!-- 1. 市場狀態決策矩陣 -->
+                    <div class="google-card p-5 md:p-6">
+                        <div class="flex items-center justify-between mb-4 border-b border-[#dadce0] pb-3">
+                            <h3 class="text-[16px] font-medium text-[#202124]">市場狀態決策矩陣</h3>
+                            <span class="text-xs font-mono text-[#5f6368] bg-[#f1f3f4] px-2 py-1 rounded" id="matrixDetectionLabel">手動設定</span>
+                        </div>
+
+                        <div id="autoStateWrapper">
+                            <!-- 建議操作卡片 -->
+                            <div class="border border-[#dadce0] rounded-md p-4 mb-6 bg-white" id="autoResultCard">
+                                <div class="flex items-center mb-2">
+                                    <span class="font-medium text-xl text-[#202124] mr-3" id="autoResultTitle">--</span>
+                                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-sm bg-[#f8f9fa] border border-[#dadce0] text-[#5f6368]" id="autoResultBadge">--</span>
+                                </div>
+                                <div class="text-sm text-[#5f6368] leading-relaxed" id="autoResultDesc">--</div>
+                            </div>
+                            
+                            <div class="hidden">
+                                <input type="hidden" id="matrixTrend" value="contraction">
+                                <input type="hidden" id="matrixVolume" value="shrink">
+                                <input type="hidden" id="matrixPosition" value="high">
+                            </div>
+
+                            <!-- 矩陣呈現 -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="border border-[#dadce0] rounded-md p-3 bg-white">
+                                    <div class="text-center font-medium text-xs text-[#5f6368] mb-3 tracking-wide">收縮狀態 (逆勢操作)</div>
+                                    <div class="grid grid-cols-2 gap-2 h-24">
+                                        <div id="cell-con-shrink-high" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
+                                            <span class="text-[10px] mb-1">量縮/高位</span>
+                                            <span class="font-medium text-sm tracking-wide">快速賣出</span>
+                                        </div>
+                                        <div id="cell-con-expand-high" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
+                                            <span class="text-[10px] mb-1">量大/高位</span>
+                                            <span class="font-medium text-sm tracking-wide">準備賣出</span>
+                                        </div>
+                                        <div id="cell-con-shrink-low" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
+                                            <span class="text-[10px] mb-1">量縮/低位</span>
+                                            <span class="font-medium text-sm tracking-wide">準備買入</span>
+                                        </div>
+                                        <div id="cell-con-expand-low" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
+                                            <span class="text-[10px] mb-1">量大/低位</span>
+                                            <span class="font-medium text-sm tracking-wide">快速買入</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="border border-[#dadce0] rounded-md p-3 bg-white">
+                                    <div class="text-center font-medium text-xs text-[#5f6368] mb-3 tracking-wide">擴張狀態 (順勢操作)</div>
+                                    <div class="grid grid-cols-2 gap-2 h-24">
+                                        <div id="cell-exp-shrink-high" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
+                                            <span class="text-[10px] mb-1">量縮/高位</span>
+                                            <span class="font-medium text-sm tracking-wide">準備賣出</span>
+                                        </div>
+                                        <div id="cell-exp-expand-high" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
+                                            <span class="text-[10px] mb-1">量大/高位</span>
+                                            <span class="font-medium text-sm tracking-wide">繼續加碼</span>
+                                        </div>
+                                        <div id="cell-exp-shrink-low" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
+                                            <span class="text-[10px] mb-1">量縮/低位</span>
+                                            <span class="font-medium text-sm tracking-wide">繼續加空</span>
+                                        </div>
+                                        <div id="cell-exp-expand-low" class="matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1">
+                                            <span class="text-[10px] mb-1">量大/低位</span>
+                                            <span class="font-medium text-sm tracking-wide">準備買入</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. 波浪進度視覺化 -->
+                    <div class="google-card p-5 md:p-6">
+                        <div class="flex items-center mb-5 border-b border-[#dadce0] pb-3">
+                            <h3 class="text-[16px] font-medium text-[#202124]">波浪進度判定</h3>
+                        </div>
+                        
+                        <div id="waveStatusBox" class="p-4 rounded-md mb-6 flex items-center space-x-3 bg-[#f8f9fa] border border-[#dadce0]">
+                            <div>
+                                <div id="waveTitle" class="font-medium text-[#202124] text-[15px]">--</div>
+                                <div id="waveDesc" class="text-sm text-[#5f6368] mt-1">--</div>
+                            </div>
+                        </div>
+
+                        <div class="relative pt-6 pb-2">
+                            <div class="absolute top-8 left-0 w-full h-1 progress-bar-bg rounded"></div>
+                            <div id="progressFill" class="absolute top-8 left-0 h-1 progress-bar-fill rounded transition-all duration-1000 w-0"></div>
+                            <div class="flex justify-between relative z-10 text-xs font-medium text-[#5f6368]">
+                                <div class="flex flex-col items-center w-10">
+                                    <div id="dot-cost" class="w-3 h-3 rounded-full bg-[#dadce0] mb-2"></div>
+                                    成本
+                                </div>
+                                <div class="flex flex-col items-center w-10">
+                                    <div id="dot-104" class="w-3 h-3 rounded-full bg-[#dadce0] mb-2"></div>
+                                    突破
+                                </div>
+                                <div class="flex flex-col items-center w-10">
+                                    <div id="dot-120" class="w-3 h-3 rounded-full bg-[#dadce0] mb-2"></div>
+                                    關卡一
+                                </div>
+                                <div class="flex flex-col items-center w-10">
+                                    <div id="dot-140" class="w-3 h-3 rounded-full bg-[#dadce0] mb-2"></div>
+                                    關卡二
+                                </div>
+                                <div class="flex flex-col items-center w-10">
+                                    <div id="dot-170" class="w-3 h-3 rounded-full bg-[#dadce0] mb-2"></div>
+                                    關卡三
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. 關卡數值卡片 -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa] flex flex-col items-center text-center">
+                            <span class="text-[11px] font-medium text-[#5f6368] mb-1 tracking-wider uppercase">突破點 (x1.04)</span>
+                            <span class="text-2xl font-mono font-medium text-[#202124]" id="res-104">--</span>
+                            <span class="text-xs text-[#5f6368] mt-2" id="dist-104">--</span>
+                        </div>
+                        <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa] flex flex-col items-center text-center">
+                            <span class="text-[11px] font-medium text-[#5f6368] mb-1 tracking-wider uppercase">關卡一 (x1.2)</span>
+                            <span class="text-2xl font-mono font-medium text-[#202124]" id="res-120">--</span>
+                            <span class="text-xs text-[#5f6368] mt-2" id="dist-120">--</span>
+                        </div>
+                        <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa] flex flex-col items-center text-center">
+                            <span class="text-[11px] font-medium text-[#5f6368] mb-1 tracking-wider uppercase">關卡二 (x1.4)</span>
+                            <span class="text-2xl font-mono font-medium text-[#202124]" id="res-140">--</span>
+                            <span class="text-xs text-[#5f6368] mt-2" id="dist-140">--</span>
+                        </div>
+                        <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa] flex flex-col items-center text-center">
+                            <span class="text-[11px] font-medium text-[#5f6368] mb-1 tracking-wider uppercase">關卡三 (x1.7)</span>
+                            <span class="text-2xl font-mono font-medium text-[#202124]" id="res-170">--</span>
+                            <span class="text-xs text-[#5f6368] mt-2" id="dist-170">--</span>
+                        </div>
+                    </div>
+
+                    <!-- 純文字報告複製區 -->
+                    <div class="mt-8 pt-2">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="block text-sm font-medium text-[#202124]">純文字報告 (可複製分享)</label>
+                            <button onclick="copyToClipboard()" id="copyBtn" class="text-xs bg-[#f8f9fa] hover:bg-[#e8eaed] border border-[#dadce0] text-[#1a73e8] py-2 px-4 rounded-md transition font-medium">
+                                複製內容
+                            </button>
+                        </div>
+                        <textarea id="resultText" readonly rows="12" 
+                            class="w-full px-4 py-3 bg-[#f8f9fa] border border-[#dadce0] rounded-md text-[#3c4043] font-mono text-sm resize-y outline-none focus:ring-1 focus:ring-[#1a73e8]"></textarea>
+                    </div>
                 </div>
             </div>
 
-            <!-- 分頁 2：重點摘要與心法 -->
-            <div id="tab-guide" class="hidden space-y-6 text-gray-800">
-                <h2 class="text-xl font-bold border-b pb-3 text-gray-900">強勢股估算 <span class="text-sm font-normal text-gray-500 ml-1">單純以法人/主力平均成本計算</span></h2>
-
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-gray-50 p-4 md:p-6 rounded-xl">
+            <!-- 分頁 2：強勢股指南 -->
+            <div id="tab-guide" class="hidden space-y-6 text-[#202124]">
+                <div class="flex items-center mb-4">
+                    <h2 class="text-xl font-medium text-[#202124]">強勢股估算</h2>
+                    <span class="text-sm font-normal text-[#5f6368] ml-2">單純以法人/主力平均成本計算</span>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div class="lg:col-span-4 space-y-4">
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                            <div class="flex items-center text-gray-700 font-bold mb-3">
-                                <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                <span>輸入成本資料</span>
+                        <div class="bg-white p-5 rounded-md border border-[#dadce0] google-shadow">
+                            <div class="flex items-center text-[#1a73e8] font-medium mb-4 text-sm">
+                                輸入成本資料
                             </div>
-                            <label class="block text-sm text-gray-500 mb-2">法人/主力 平均成本</label>
-                            <input type="number" id="simpleCostInput" oninput="calculateDashboard()" class="w-full px-4 py-3 text-xl font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="例如：173.40" step="any">
+                            <label class="block text-sm font-medium text-[#5f6368] mb-2">法人/主力 平均成本</label>
+                            <input type="number" id="simpleCostInput" oninput="calculateDashboard()" class="w-full px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] outline-none transition bg-white text-[15px]" placeholder="例如：133.85" step="any">
                         </div>
-
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                            <div class="flex items-center text-gray-700 font-bold mb-3">
-                                <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <span>選股與四要件</span>
+                        
+                        <div class="bg-white p-5 rounded-md border border-[#dadce0] google-shadow">
+                            <div class="flex items-center text-[#5f6368] font-medium mb-3 text-sm">
+                                選股與四要件
                             </div>
-                            <p class="text-sm text-gray-600 mb-3">這套算法專門用於<span class="text-red-500 font-bold">強勢股</span>，進場前請確認符合以下四要件：</p>
-                            <ol class="list-decimal pl-5 text-sm space-y-2 text-gray-700 mb-5">
+                            <p class="text-sm text-[#5f6368] mb-4">這套算法專門用於<span class="font-bold text-[#d93025]">強勢股</span>，進場前請確認符合以下四要件：</p>
+                            <ol class="list-decimal pl-4 text-sm text-[#3c4043] space-y-2 mb-5 ml-2">
                                 <li>必須是強勢股</li>
-                                <li>法人外資或投信持續加碼 (至少不減碼)</li>
-                                <li>多頭線型 (K線圖往右上角走)</li>
+                                <li>法人外資或投信持續加碼(至少不減碼)</li>
+                                <li>多頭線型(K線圖往右上角走)</li>
                                 <li>現價比成本高，或是差不多</li>
                             </ol>
-                            
-                            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                                <div class="text-yellow-700 font-bold text-sm mb-1 flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <div class="bg-[#fef7e0] p-4 rounded-md border border-[#fde293]">
+                                <div class="text-[#b06000] font-medium text-xs mb-1 flex items-center">
                                     核心邏輯
                                 </div>
-                                <p class="text-xs text-yellow-800 leading-relaxed">法人會去推升「現價比自己成本高」的股票，推上去獲利才多。從低點推上去的過程叫做「收貨盤整」。</p>
+                                <p class="text-xs text-[#b06000] leading-relaxed">法人會去推升「現價比自己成本高」的股票，推上去獲利才多。從低點推上去的過程叫做「收貨盤整」。</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-                            <div class="border-l-4 border-blue-500 p-5 flex-1 flex flex-col">
-                                <div class="flex justify-between items-start mb-2">
-                                    <span class="bg-blue-50 text-blue-600 text-xs font-bold px-2 py-1 rounded">突破起漲 (x1.04)</span>
-                                    <div class="text-right">
-                                        <span class="text-3xl font-mono font-bold text-gray-800 block" id="dash-104">--</span>
-                                        <span class="text-xs text-blue-600 font-mono font-bold block mt-1" id="dash-104-106">進場區間: -- ~ --</span>
-                                    </div>
+                        <div class="bg-white rounded-md border-t-4 border-t-[#1a73e8] border-l border-r border-b border-[#dadce0] p-5 flex flex-col google-shadow">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="text-[#1a73e8] text-sm font-medium">突破起漲 <br><span class="text-xs">(x1.04)</span></span>
+                                <div class="text-right">
+                                    <span class="text-3xl font-mono font-medium text-[#202124] block" id="dash-104">--</span>
+                                    <span class="text-xs text-[#1a73e8] font-medium block mt-1" id="dash-104-106">進場區間: -- ~ --</span>
                                 </div>
-                                <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">當現價站穩這個數字，就會往上移動，站不穩會繼續盤整。想攤平或進場，建議在 1.04 - 1.06 倍間操作。</p>
                             </div>
+                            <p class="text-sm text-[#5f6368] leading-relaxed">當現價站穩這個數字，就會往上移動，站不穩會繼續盤整。想攤平或進場，建議在 1.04 - 1.06 倍間操作。</p>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-                            <div class="border-l-4 border-emerald-400 p-5 flex-1 flex flex-col">
-                                <div class="flex justify-between items-start mb-2">
-                                    <span class="bg-emerald-50 text-emerald-600 text-xs font-bold px-2 py-1 rounded">第一波高點 (x1.20)</span>
-                                    <div class="text-right">
-                                        <span class="text-3xl font-mono font-bold text-gray-800 block" id="dash-120">--</span>
-                                        <span class="text-xs text-emerald-600 font-mono font-bold block mt-1" id="dash-117-118">先行獲利: -- ~ --</span>
-                                    </div>
+                        
+                        <div class="bg-white rounded-md border-t-4 border-t-[#1e8e3e] border-l border-r border-b border-[#dadce0] p-5 flex flex-col google-shadow">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="text-[#1e8e3e] text-sm font-medium">第一波高點 <br><span class="text-xs">(x1.20)</span></span>
+                                <div class="text-right">
+                                    <span class="text-3xl font-mono font-medium text-[#202124] block" id="dash-120">--</span>
+                                    <span class="text-xs text-[#1e8e3e] font-medium block mt-1" id="dash-117-118">先行獲利: -- ~ --</span>
                                 </div>
-                                <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">突破後大概走到這個位置會休息。建議可以在接近此價位時 (例如少掛 1-2 檔) 安全打出獲利了結。</p>
                             </div>
+                            <p class="text-sm text-[#5f6368] leading-relaxed">突破後大概走到這個位置會休息。建議可以在接近此價位時安全打出獲利了結。</p>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-                            <div class="border-l-4 border-amber-400 p-5 flex-1 flex flex-col">
-                                <div class="flex justify-between items-start mb-2">
-                                    <span class="bg-amber-50 text-amber-600 text-xs font-bold px-2 py-1 rounded">第二波高點 (x1.40)</span>
-                                    <div class="text-right">
-                                        <span class="text-3xl font-mono font-bold text-gray-800 block" id="dash-140">--</span>
-                                        <span class="text-xs text-amber-600 font-mono font-bold block mt-1" id="dash-137-138">先行獲利: -- ~ --</span>
-                                    </div>
+                        
+                        <div class="bg-white rounded-md border-t-4 border-t-[#f9ab00] border-l border-r border-b border-[#dadce0] p-5 flex flex-col google-shadow">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="text-[#f9ab00] text-sm font-medium">第二波高點 <br><span class="text-xs">(x1.40)</span></span>
+                                <div class="text-right">
+                                    <span class="text-3xl font-mono font-medium text-[#202124] block" id="dash-140">--</span>
+                                    <span class="text-xs text-[#f9ab00] font-medium block mt-1" id="dash-137-138">先行獲利: -- ~ --</span>
                                 </div>
-                                <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">經歷 3-5 日線盤整後再度上攻的高點。1.4 倍的波浪可能會有好幾次，若突破 1.4 倍才可能走向最後一波。</p>
                             </div>
+                            <p class="text-sm text-[#5f6368] leading-relaxed">經歷 3-5 日線盤整後再度上攻的高點。1.4 倍的波浪可能會有好幾次，若突破 1.4 倍才可能走向最後一波。</p>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-                            <div class="border-l-4 border-rose-400 p-5 flex-1 flex flex-col">
-                                <div class="flex justify-between items-start mb-2">
-                                    <span class="bg-rose-50 text-rose-600 text-xs font-bold px-2 py-1 rounded">最終極限波 (x1.70)</span>
-                                    <span class="text-3xl font-mono font-bold text-gray-800" id="dash-170">--</span>
+                        
+                        <div class="bg-white rounded-md border-t-4 border-t-[#d93025] border-l border-r border-b border-[#dadce0] p-5 flex flex-col google-shadow">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="text-[#d93025] text-sm font-medium">最終極限波 <br><span class="text-xs">(x1.70)</span></span>
+                                <div class="text-right">
+                                    <span class="text-3xl font-mono font-medium text-[#202124] block" id="dash-170">--</span>
                                 </div>
-                                <p class="text-sm text-gray-600 mt-2 leading-relaxed flex-1">大多頭時第三峰會來得很快，高度最後會在此結束。買在略低於此價位容易變韭菜，應準備停損或等待法人成本重新墊高。</p>
                             </div>
+                            <p class="text-sm text-[#5f6368] leading-relaxed">大多頭時第三峰會來得很快，高度最後會在此結束。買在略低於此價位容易變韭菜，應準備停損或等待法人成本重新墊高。</p>
                         </div>
                     </div>
-                </div>
 
-                <div class="mt-6">
-                    <h3 class="font-bold text-gray-900 mb-3 flex items-center">
-                        <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">進階</span>
-                        操作進階心法
-                    </h3>
-                    <div class="space-y-4 text-sm text-gray-700">
-                        <div class="flex items-start">
-                            <div class="min-w-[80px] font-bold text-red-600">警示訊號</div>
-                            <div class="flex-1">若買入價格已逼近成本的 1.7 倍，極大機率正處於「韭菜區」，應果斷執行停損或避開。</div>
-                        </div>
-                        <div class="flex items-start">
-                            <div class="min-w-[80px] font-bold text-blue-600">動態調整</div>
-                            <div class="flex-1">法人成本每日變動，計算目標價時應以當日最新成本為準。</div>
-                        </div>
-                        <div class="flex items-start">
-                            <div class="min-w-[80px] font-bold text-orange-600">趨勢判定</div>
-                            <div class="flex-1">現價若跌破法人成本，代表漲勢結束。必須等待法人成本重新墊高，且現價再次回到 1.04 倍以上才具備進場條件。</div>
-                        </div>
-                        <div class="flex items-start">
-                            <div class="min-w-[80px] font-bold text-gray-500">汰弱留強</div>
-                            <div class="flex-1">股價若長期低於法人成本，說明該標的已被主力放棄，不具備追蹤價值。</div>
+                    <div class="lg:col-span-12 mt-2 mb-4">
+                        <div class="bg-white rounded-md border border-[#dadce0] p-6 google-shadow">
+                            <div class="flex items-center mb-5">
+                                <span class="bg-[#202124] text-white text-xs font-medium px-2 py-1 rounded-sm mr-2">進階</span>
+                                <span class="font-medium text-[#202124]">操作進階心法</span>
+                            </div>
+                            <div class="space-y-4 text-sm text-[#3c4043]">
+                                <div class="flex items-start"><span class="font-medium text-[#d93025] min-w-[70px]">警示訊號</span><span class="text-[#5f6368] leading-relaxed">若買入價格已逼近成本的 1.7 倍，極大機率正處於「韭菜區」，應果斷執行停損或避開。</span></div>
+                                <div class="flex items-start"><span class="font-medium text-[#1a73e8] min-w-[70px]">動態調整</span><span class="text-[#5f6368] leading-relaxed">法人成本每日變動，計算目標價時應以當日最新成本為準。</span></div>
+                                <div class="flex items-start"><span class="font-medium text-[#f9ab00] min-w-[70px]">趨勢判定</span><span class="text-[#5f6368] leading-relaxed">現價若跌破法人成本，代表漲勢結束。必須等待法人成本重新墊高，且現價再次回到 1.04 倍以上才具備進場條件。</span></div>
+                                <div class="flex items-start"><span class="font-medium text-[#5f6368] min-w-[70px]">汰弱留強</span><span class="text-[#5f6368] leading-relaxed">股價若長期低於法人成本，說明該標的已被主力放棄，不具備追蹤價值。</span></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- 分頁 3：黃金分割率計算方式 -->
-            <div id="tab-golden" class="hidden space-y-6 text-gray-800">
-                <h2 class="text-xl font-bold border-b pb-3 text-gray-900">黃金分割率 <span class="text-sm font-normal text-gray-500 ml-1">回檔與反彈目標計算</span></h2>
-
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-gray-50 p-4 md:p-6 rounded-xl">
+            <div id="tab-golden" class="hidden space-y-6 text-[#202124]">
+                <h2 class="text-xl font-medium border-b border-[#dadce0] pb-3 text-[#202124]">黃金分割率 <span class="text-sm font-normal text-[#5f6368] ml-1">回檔與反彈目標計算</span></h2>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 google-card p-5">
                     <div class="lg:col-span-4 space-y-4">
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                            <div class="flex items-center text-gray-700 font-bold mb-3">
-                                <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        <div class="bg-[#f8f9fa] p-5 rounded-md border border-[#dadce0]">
+                            <div class="flex items-center text-[#202124] font-medium mb-4">
                                 <span>輸入波段高低點</span>
                             </div>
-                            <div class="space-y-3">
+                            <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm text-gray-500 mb-1">波段高點</label>
-                                    <input type="number" id="grHigh" oninput="calculateGoldenDashboard()" class="w-full px-4 py-2 text-lg font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="輸入最高價" step="any">
+                                    <label class="block text-sm font-medium text-[#5f6368] mb-1">波段高點</label>
+                                    <input type="number" id="grHigh" oninput="calculateGoldenDashboard()" class="w-full px-4 py-2 text-[15px] font-mono border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] outline-none transition bg-white" placeholder="輸入最高價" step="any">
                                 </div>
                                 <div>
-                                    <label class="block text-sm text-gray-500 mb-1">波段低點</label>
-                                    <input type="number" id="grLow" oninput="calculateGoldenDashboard()" class="w-full px-4 py-2 text-lg font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="輸入最低價" step="any">
+                                    <label class="block text-sm font-medium text-[#5f6368] mb-1">波段低點</label>
+                                    <input type="number" id="grLow" oninput="calculateGoldenDashboard()" class="w-full px-4 py-2 text-[15px] font-mono border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] outline-none transition bg-white" placeholder="輸入最低價" step="any">
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
-                            <div class="text-indigo-800 font-bold text-sm mb-1 flex items-center">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                核心價值
-                            </div>
-                            <p class="text-xs text-indigo-900 leading-relaxed">黃金分割率適合在 <strong>市場具有明顯趨勢</strong> 且出現 <strong>暫時性回檔或反彈</strong> 時使用。它的核心價值在於預測股價在調整過程中的「支撐」與「壓力」位，幫助投資者判斷何時是重新進場或獲利了結的時機。</p>
                         </div>
                     </div>
 
                     <div class="lg:col-span-8 space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                                <h3 class="text-center font-bold text-emerald-600 mb-4 border-b pb-2">多頭回檔支撐 (由高點向下)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div class="bg-white rounded-md border border-[#dadce0] p-5">
+                                <h3 class="text-center font-medium text-[#202124] mb-4 border-b border-[#dadce0] pb-2">多頭回檔支撐 (由高點向下)</h3>
                                 <div class="space-y-3">
-                                    <div class="flex justify-between items-center bg-gray-50 px-3 py-2 rounded">
-                                        <div class="flex flex-col">
-                                            <span class="text-xs text-gray-500">0.382 (強勢修正)</span>
-                                        </div>
-                                        <span class="text-lg font-mono font-bold text-gray-800" id="gr-up-382">--</span>
+                                    <div class="flex justify-between items-center bg-[#f8f9fa] px-3 py-2 rounded-sm border border-[#dadce0]">
+                                        <span class="text-xs font-medium text-[#5f6368]">0.382 (強勢修正)</span>
+                                        <span class="text-lg font-mono font-medium text-[#202124]" id="gr-up-382">--</span>
                                     </div>
-                                    <div class="flex justify-between items-center bg-gray-50 px-3 py-2 rounded">
-                                        <div class="flex flex-col">
-                                            <span class="text-xs text-gray-500">0.500 (中性修正)</span>
-                                        </div>
-                                        <span class="text-lg font-mono font-bold text-gray-800" id="gr-up-500">--</span>
+                                    <div class="flex justify-between items-center bg-[#f8f9fa] px-3 py-2 rounded-sm border border-[#dadce0]">
+                                        <span class="text-xs font-medium text-[#5f6368]">0.500 (中性修正)</span>
+                                        <span class="text-lg font-mono font-medium text-[#202124]" id="gr-up-500">--</span>
                                     </div>
-                                    <div class="flex justify-between items-center bg-gray-50 px-3 py-2 rounded border-l-4 border-emerald-500">
-                                        <div class="flex flex-col">
-                                            <span class="text-xs font-bold text-emerald-600">0.618 (深層修正 / 關鍵防線)</span>
-                                        </div>
-                                        <span class="text-lg font-mono font-bold text-emerald-600" id="gr-up-618">--</span>
+                                    <div class="flex justify-between items-center bg-[#f1f3f4] px-3 py-2 rounded-sm border-l-4 border-[#1e8e3e]">
+                                        <span class="text-xs font-medium text-[#202124]">0.618 (關鍵防線)</span>
+                                        <span class="text-lg font-mono font-medium text-[#202124]" id="gr-up-618">--</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                                <h3 class="text-center font-bold text-rose-600 mb-4 border-b pb-2">空頭反彈壓力 (由低點向上)</h3>
+                            <div class="bg-white rounded-md border border-[#dadce0] p-5">
+                                <h3 class="text-center font-medium text-[#202124] mb-4 border-b border-[#dadce0] pb-2">空頭反彈壓力 (由低點向上)</h3>
                                 <div class="space-y-3">
-                                    <div class="flex justify-between items-center bg-gray-50 px-3 py-2 rounded border-l-4 border-rose-500">
-                                        <div class="flex flex-col">
-                                            <span class="text-xs font-bold text-rose-600">0.618 (強勢反彈 / 關鍵壓力)</span>
-                                        </div>
-                                        <span class="text-lg font-mono font-bold text-rose-600" id="gr-down-618">--</span>
+                                    <div class="flex justify-between items-center bg-[#f1f3f4] px-3 py-2 rounded-sm border-l-4 border-[#d93025]">
+                                        <span class="text-xs font-medium text-[#202124]">0.618 (關鍵壓力)</span>
+                                        <span class="text-lg font-mono font-medium text-[#202124]" id="gr-down-618">--</span>
                                     </div>
-                                    <div class="flex justify-between items-center bg-gray-50 px-3 py-2 rounded">
-                                        <div class="flex flex-col">
-                                            <span class="text-xs text-gray-500">0.500 (中性反彈)</span>
-                                        </div>
-                                        <span class="text-lg font-mono font-bold text-gray-800" id="gr-down-500">--</span>
+                                    <div class="flex justify-between items-center bg-[#f8f9fa] px-3 py-2 rounded-sm border border-[#dadce0]">
+                                        <span class="text-xs font-medium text-[#5f6368]">0.500 (中性反彈)</span>
+                                        <span class="text-lg font-mono font-medium text-[#202124]" id="gr-down-500">--</span>
                                     </div>
-                                    <div class="flex justify-between items-center bg-gray-50 px-3 py-2 rounded">
-                                        <div class="flex flex-col">
-                                            <span class="text-xs text-gray-500">0.382 (弱勢反彈)</span>
-                                        </div>
-                                        <span class="text-lg font-mono font-bold text-gray-800" id="gr-down-382">--</span>
+                                    <div class="flex justify-between items-center bg-[#f8f9fa] px-3 py-2 rounded-sm border border-[#dadce0]">
+                                        <span class="text-xs font-medium text-[#5f6368]">0.382 (弱勢反彈)</span>
+                                        <span class="text-lg font-mono font-medium text-[#202124]" id="gr-down-382">--</span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-6 mt-6">
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-2 flex items-center">
-                            <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">情境</span>
-                            適用時機與情境
-                        </h3>
-                        <ul class="list-disc pl-5 text-sm space-y-3 text-gray-700">
-                            <li><strong>趨勢中的拉回修正</strong>
-                                <ul class="list-[circle] pl-5 mt-1 space-y-1 text-gray-600">
-                                    <li>多頭市場：當股價大漲一段後開始下跌調整，可用黃金分割率計算可能的支撐點（如回檔 0.382 或 0.618 處），尋求分批布局的機會。</li>
-                                    <li>空頭市場：當股價大跌後出現反彈，可用來推算反彈的壓力點，判斷是否該逢高減碼或放空。</li>
-                                </ul>
-                            </li>
-                            <li><strong>尋找股價轉折點</strong><br>
-                                當股價接近特定的比例水平（如 0.618 的關鍵位）且出現止跌或受阻跡象時，是判斷盤勢可能發生轉向的重要參考。</li>
-                            <li><strong>計算整理目標價</strong><br>
-                                在股價突破前高或跌破前低後的「擴展」階段，可用來預估下一波漲升或跌幅的目標價位。</li>
-                        </ul>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 class="font-bold text-gray-900 mb-2 flex items-center">
-                                <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">數值</span>
-                                常用關鍵數值與意義
-                            </h3>
-                            <ul class="space-y-2 text-sm text-gray-700 mt-2">
-                                <li><span class="font-bold text-blue-600">0.382：</span>強勢修正。若股價回檔至此即止跌，代表原趨勢極強。</li>
-                                <li><span class="font-bold text-green-600">0.500：</span>中性修正。股價回到漲跌幅的一半位置。</li>
-                                <li><span class="font-bold text-red-600">0.618：</span>深層修正。這是最關鍵的「黃金比例」，通常是多空防守的最後防線。</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-gray-900 mb-2 flex items-center">
-                                <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">注意</span>
-                                使用限制
-                            </h3>
-                            <ul class="list-disc pl-5 text-sm space-y-2 text-gray-700 mt-2">
-                                <li><strong>盤整格局不適用：</strong>當市場進入無方向的橫盤整理（箱型震盪）時，黃金分割率的預測效果會大幅下降。</li>
-                                <li><strong>需搭配其他指標：</strong>單靠比例容易出錯，建議搭配 KD 指標、成交量或均線來提高判斷的準確度。</li>
-                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- 分頁 4：賺賠比動態試算器 -->
-            <div id="tab-rr-ratio" class="hidden space-y-6 text-gray-800">
-                <h2 class="text-xl font-bold border-b pb-3 text-gray-900">賺賠比動態試算 <span class="text-sm font-normal text-gray-500 ml-1">評估交易期望值</span></h2>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- 輸入區 -->
-                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-gray-100">
+            <div id="tab-rr-ratio" class="hidden space-y-6 text-[#202124]">
+                <h2 class="text-xl font-medium border-b border-[#dadce0] pb-3 text-[#202124]">賺賠比動態試算 <span class="text-sm font-normal text-[#5f6368] ml-1">評估交易期望值</span></h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 google-card p-5">
+                    <div class="bg-[#f8f9fa] p-5 rounded-md border border-[#dadce0]">
                         <div class="space-y-5">
                             <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-1">預計進場價</label>
-                                <input type="number" id="rrEntry" oninput="calculateRR()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="輸入買進價位" step="any">
+                                <label class="block text-sm font-medium text-[#5f6368] mb-1">預計進場價</label>
+                                <input type="number" id="rrEntry" oninput="calculateRR()" class="w-full px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] outline-none transition bg-white" placeholder="輸入買進價位" step="any">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-emerald-600 mb-1">目標停利價</label>
-                                <input type="number" id="rrTP" oninput="calculateRR()" class="w-full px-4 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" placeholder="輸入預期高點" step="any">
+                                <label class="block text-sm font-medium text-[#5f6368] mb-1">目標停利價</label>
+                                <input type="number" id="rrTP" oninput="calculateRR()" class="w-full px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] outline-none transition bg-white" placeholder="輸入預期高點" step="any">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-rose-600 mb-1">防守停損價</label>
-                                <input type="number" id="rrSL" oninput="calculateRR()" class="w-full px-4 py-2 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition" placeholder="輸入破線價位" step="any">
+                                <label class="block text-sm font-medium text-[#5f6368] mb-1">防守停損價</label>
+                                <input type="number" id="rrSL" oninput="calculateRR()" class="w-full px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] outline-none transition bg-white" placeholder="輸入破線價位" step="any">
                             </div>
                         </div>
                     </div>
 
-                    <!-- 輸出面板 -->
-                    <div class="bg-gray-50 p-5 md:p-6 rounded-xl flex flex-col justify-center border border-gray-100">
-                        <div class="text-center mb-6">
-                            <h3 class="text-sm text-gray-500 font-bold mb-1">這筆交易的賺賠比</h3>
-                            <div class="text-5xl font-mono font-bold text-gray-800" id="rr-result">--</div>
-                            <div class="mt-2 text-sm font-bold px-3 py-1 rounded inline-block bg-gray-200 text-gray-600" id="rr-eval">等待輸入</div>
+                    <div class="bg-white p-5 rounded-md flex flex-col justify-center border border-[#dadce0]">
+                        <div class="text-center mb-6 border-b border-[#dadce0] pb-5">
+                            <h3 class="text-sm text-[#5f6368] font-medium mb-2">這筆交易的賺賠比</h3>
+                            <div class="text-5xl font-mono font-medium text-[#202124]" id="rr-result">--</div>
+                            <div class="mt-3 text-sm font-medium px-3 py-1 rounded-sm inline-block bg-[#f8f9fa] border border-[#dadce0] text-[#5f6368]" id="rr-eval">等待輸入</div>
                         </div>
-                        <div class="flex justify-between items-center bg-white px-4 py-3 rounded-lg shadow-sm mb-3">
-                            <span class="text-sm text-gray-600">潛在每股獲利 (賺)</span>
-                            <span class="text-lg font-mono font-bold text-emerald-600" id="rr-reward">--</span>
+                        <div class="flex justify-between items-center bg-[#f8f9fa] px-4 py-3 rounded-sm border border-[#dadce0] mb-3">
+                            <span class="text-sm font-medium text-[#5f6368]">潛在每股獲利 (賺)</span>
+                            <span class="text-lg font-mono font-medium text-[#202124]" id="rr-reward">--</span>
                         </div>
-                        <div class="flex justify-between items-center bg-white px-4 py-3 rounded-lg shadow-sm">
-                            <span class="text-sm text-gray-600">潛在每股虧損 (賠)</span>
-                            <span class="text-lg font-mono font-bold text-rose-600" id="rr-risk">--</span>
+                        <div class="flex justify-between items-center bg-[#f8f9fa] px-4 py-3 rounded-sm border border-[#dadce0]">
+                            <span class="text-sm font-medium text-[#5f6368]">潛在每股虧損 (賠)</span>
+                            <span class="text-lg font-mono font-medium text-[#202124]" id="rr-risk">--</span>
                         </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-2 flex items-center">
-                            <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">時機</span>
-                            使用時機
-                        </h3>
-                        <p class="text-sm text-gray-700 leading-relaxed bg-blue-50 p-4 rounded-lg border border-blue-100">
-                            <strong>進場前的風險評估：</strong>在決定買入任何標的之前，務必先確立防守點（停損）與攻擊目標（停利）。利用此工具客觀檢視這筆交易是否具備數學上的優勢，避免因盲目追高而承受不成比例的下檔風險。
-                        </p>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-2 flex items-center">
-                            <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">注意</span>
-                            注意事項
-                        </h3>
-                        <ul class="list-disc pl-5 text-sm space-y-2 text-gray-700 mt-2">
-                            <li><strong>黃金標準：</strong>賺賠比通常建議大於 <strong>2.0</strong> 才值得出手。這意味著即使勝率只有一半，長期下來資金仍會穩定增長。</li>
-                            <li><strong>有憑有據：</strong>停損與停利價位必須依據技術線型（如均線、前高前低）或籌碼結構來設定，絕不可隨意憑空想像數值。</li>
-                        </ul>
                     </div>
                 </div>
             </div>
 
             <!-- 分頁 5：脫水試算器 -->
-            <div id="tab-dehydrate" class="hidden space-y-6 text-gray-800">
-                <h2 class="text-xl font-bold border-b pb-3 text-gray-900">脫水淨利試算 <span class="text-sm font-normal text-gray-500 ml-1">扣除稅費後的真實獲利</span></h2>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- 輸入區 -->
-                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-gray-100">
-                        <div class="space-y-4">
+            <div id="tab-dehydrate" class="hidden space-y-6 text-[#202124]">
+                <h2 class="text-xl font-medium border-b border-[#dadce0] pb-3 text-[#202124]">脫水淨利試算 <span class="text-sm font-normal text-[#5f6368] ml-1">扣除稅費後的真實獲利</span></h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 google-card p-5">
+                    <div class="bg-[#f8f9fa] p-5 rounded-md border border-[#dadce0]">
+                        <div class="space-y-5">
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1">買進價</label>
-                                    <input type="number" id="dhBuy" oninput="calculateDehydrate()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="買入價" step="any">
+                                    <label class="block text-sm font-medium text-[#5f6368] mb-1">買進價</label>
+                                    <input type="number" id="dhBuy" oninput="calculateDehydrate()" class="w-full px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] outline-none bg-white" placeholder="買入價" step="any">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1">賣出價</label>
-                                    <input type="number" id="dhSell" oninput="calculateDehydrate()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="賣出價 (可留空)" step="any">
+                                    <label class="block text-sm font-medium text-[#5f6368] mb-1">賣出價</label>
+                                    <input type="number" id="dhSell" oninput="calculateDehydrate()" class="w-full px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] outline-none bg-white" placeholder="賣出價" step="any">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1">交易股數</label>
-                                    <input type="number" id="dhShares" oninput="calculateDehydrate()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="預設 1000" value="1000">
+                                    <label class="block text-sm font-medium text-[#5f6368] mb-1">交易股數</label>
+                                    <input type="number" id="dhShares" oninput="calculateDehydrate()" class="w-full px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] outline-none bg-white" placeholder="預設 1000" value="1000">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1">手續費折讓</label>
-                                    <select id="dhDiscount" onchange="calculateDehydrate()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                    <label class="block text-sm font-medium text-[#5f6368] mb-1">手續費折讓</label>
+                                    <select id="dhDiscount" onchange="calculateDehydrate()" class="w-full px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] outline-none bg-white font-medium text-[#202124]">
                                         <option value="1">無折讓 (10折)</option>
                                         <option value="0.6" selected>6 折</option>
                                         <option value="0.5">5 折</option>
@@ -435,44 +503,21 @@
                         </div>
                     </div>
 
-                    <!-- 輸出面板 -->
-                    <div class="bg-gray-50 p-5 md:p-6 rounded-xl flex flex-col justify-center border border-gray-100">
-                        <div class="text-center mb-5">
-                            <h3 class="text-sm text-gray-500 font-bold mb-1">脫水真實淨利潤 (NTD)</h3>
-                            <div class="text-5xl font-mono font-bold text-gray-800" id="dh-net">--</div>
+                    <div class="bg-white p-5 rounded-md flex flex-col justify-center border border-[#dadce0]">
+                        <div class="text-center mb-6 border-b border-[#dadce0] pb-5">
+                            <h3 class="text-sm text-[#5f6368] font-medium mb-2">脫水真實淨利潤 (NTD)</h3>
+                            <div class="text-5xl font-mono font-medium text-[#202124]" id="dh-net">--</div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3 mb-3">
-                            <div class="bg-white p-3 rounded-lg shadow-sm text-center border border-gray-100">
-                                <span class="block text-xs text-gray-500 mb-1">損益兩平價 (免賠賣價)</span>
-                                <span class="block text-lg font-mono font-bold text-blue-600" id="dh-bep">--</span>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-[#f8f9fa] p-4 rounded-sm border border-[#dadce0] text-center">
+                                <span class="block text-xs font-medium text-[#5f6368] mb-1">損益兩平價</span>
+                                <span class="block text-xl font-mono font-medium text-[#202124]" id="dh-bep">--</span>
                             </div>
-                            <div class="bg-white p-3 rounded-lg shadow-sm text-center border border-gray-100">
-                                <span class="block text-xs text-gray-500 mb-1">買賣總成本 (手續費+稅)</span>
-                                <span class="block text-lg font-mono font-bold text-rose-500" id="dh-fees">--</span>
+                            <div class="bg-[#f8f9fa] p-4 rounded-sm border border-[#dadce0] text-center">
+                                <span class="block text-xs font-medium text-[#5f6368] mb-1">總手續稅金</span>
+                                <span class="block text-xl font-mono font-medium text-[#202124]" id="dh-fees">--</span>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-2 flex items-center">
-                            <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">時機</span>
-                            使用時機
-                        </h3>
-                        <p class="text-sm text-gray-700 leading-relaxed bg-indigo-50 p-4 rounded-lg border border-indigo-100">
-                            <strong>短線當沖與精算真實損益：</strong>極短線交易（如當沖、隔日沖）的獲利空間通常較小，未經扣除手續費與千分之三交易稅的帳面獲利往往是虛幻的。本工具專門協助交易者快速找出「損益兩平點」，避免落入賺了價差卻賠了手續費的窘境。
-                        </p>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-2 flex items-center">
-                            <span class="bg-gray-800 text-white text-xs py-1 px-2 rounded mr-2">注意</span>
-                            注意事項
-                        </h3>
-                        <ul class="list-disc pl-5 text-sm space-y-2 text-gray-700 mt-2">
-                            <li><strong>最低門檻限制：</strong>多數券商設定單筆手續費最低收取 20 元（買賣各算一筆）。進行零股交易或低總價進出時，手續費佔比會大幅攀升，務必特別留意。</li>
-                            <li><strong>交易稅計算：</strong>現行台股一般股票賣出時需繳納 0.3% 的證券交易稅（當沖稅半則為 0.15%）。本試算器預設以一般交易的 0.3% 進行估算。</li>
-                        </ul>
                     </div>
                 </div>
             </div>
@@ -481,41 +526,188 @@
     </div>
 
     <script>
-        // 分頁切換邏輯
+        let globalHistoricalData = [];
+
         function switchTab(tabId) {
             const tabs = ['calculator', 'guide', 'golden', 'rr-ratio', 'dehydrate'];
-            
             tabs.forEach(t => {
                 const tabEl = document.getElementById('tab-' + t);
                 const btnEl = document.getElementById('btn-' + t);
-                
                 if (tabEl && btnEl) {
                     if (t === tabId) {
                         tabEl.classList.remove('hidden');
                         tabEl.classList.add('block');
-                        btnEl.className = 'flex-1 min-w-[120px] px-2 py-4 text-center text-sm font-semibold text-blue-600 border-b-2 border-blue-600 transition bg-white';
+                        btnEl.className = 'flex-1 min-w-[120px] px-2 py-3 text-center text-sm font-medium text-[#1a73e8] border-b-2 border-[#1a73e8] transition bg-white';
                     } else {
                         tabEl.classList.remove('block');
                         tabEl.classList.add('hidden');
-                        btnEl.className = 'flex-1 min-w-[120px] px-2 py-4 text-center text-sm font-semibold text-gray-500 hover:text-gray-700 border-b-2 border-transparent transition bg-gray-50';
+                        btnEl.className = 'flex-1 min-w-[120px] px-2 py-3 text-center text-sm font-medium text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] border-b-2 border-transparent transition';
                     }
                 }
             });
         }
 
-        // 數值格式化
-        const formatNumber = (num) => {
-            return Number(num.toFixed(2));
-        };
+        const formatNumber = (num) => Number(num.toFixed(2));
 
-        // --- Tab 1: 波段密碼計算 ---
+        async function searchStock() {
+            const rawInput = document.getElementById('stockInput').value.trim();
+            if(!rawInput) return showMessage("請輸入股票名稱或代號");
+
+            const searchBtn = document.getElementById('searchBtn');
+            searchBtn.innerText = "查詢中...";
+            searchBtn.disabled = true;
+
+            let codeInput = rawInput;
+            const match = rawInput.match(/\((.*?)\)/);
+            if (match) {
+                codeInput = match[1];
+            }
+
+            let symbolsToTry = [codeInput];
+            if (!isNaN(codeInput)) {
+                symbolsToTry = [`${codeInput}.TW`, `${codeInput}.TWO`];
+            } else if (!codeInput.includes('.')) {
+                 symbolsToTry = [`${codeInput}.TW`];
+            }
+
+            let found = false;
+            for (let sym of symbolsToTry) {
+                try {
+                    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=1mo`;
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                    const res = await fetch(proxyUrl);
+                    if(!res.ok) continue;
+                    
+                    const data = await res.json();
+                    if(!data.contents) continue;
+                    
+                    const parsed = JSON.parse(data.contents);
+                    
+                    if (parsed.chart && parsed.chart.result && parsed.chart.result.length > 0) {
+                        const result = parsed.chart.result[0];
+                        
+                        const price = result.meta.regularMarketPrice;
+                        let name = result.meta.symbol;
+                        if(result.meta.shortName) name = result.meta.shortName;
+
+                        document.getElementById('stockInput').value = `${name} (${codeInput})`;
+                        document.getElementById('currentPrice').value = price;
+                        showMessage(`載入成功：${name} (${price})`);
+                        found = true;
+
+                        if (result.timestamp && result.indicators.quote[0]) {
+                            const timestamps = result.timestamp;
+                            const quotes = result.indicators.quote[0];
+                            const validData = [];
+                            for(let i = 0; i < timestamps.length; i++) {
+                                if (quotes.close[i] !== null && quotes.volume[i] !== null) {
+                                    validData.push({ close: quotes.close[i], volume: quotes.volume[i] });
+                                }
+                            }
+                            globalHistoricalData = validData.slice(-20);
+                            runAutoDetection();
+                        }
+                        break;
+                    }
+                } catch (e) {
+                    console.log("Fetch error", e);
+                }
+            }
+
+            if (!found) {
+                showMessage("找不到報價資訊，請確認代號或手動輸入。");
+            }
+            
+            searchBtn.innerText = "查詢";
+            searchBtn.disabled = false;
+        }
+
+        function runAutoDetection() {
+            const data = globalHistoricalData;
+            if(data.length < 5) return; 
+
+            const currentPrice = data[data.length - 1].close;
+            const currentVol = data[data.length - 1].volume;
+
+            const max20 = Math.max(...data.map(d => d.close));
+            const min20 = Math.min(...data.map(d => d.close));
+            const midPoint = (max20 + min20) / 2;
+            const position = currentPrice >= midPoint ? 'high' : 'low';
+
+            const avgVol = data.reduce((a,b) => a + b.volume, 0) / data.length;
+            const volumeState = currentVol > avgVol ? 'expand' : 'shrink';
+            
+            const price5DaysAgo = data[Math.max(0, data.length - 5)].close;
+            const trend = Math.abs((currentPrice - price5DaysAgo) / price5DaysAgo) > 0.02 ? 'expansion' : 'contraction';
+
+            document.getElementById('matrixTrend').value = trend;
+            document.getElementById('matrixVolume').value = volumeState;
+            document.getElementById('matrixPosition').value = position;
+            document.getElementById('matrixDetectionLabel').innerText = "自動判定結果";
+
+            updateMatrix();
+        }
+
+        function updateMatrix() {
+            const trend = document.getElementById('matrixTrend').value;
+            const vol = document.getElementById('matrixVolume').value;
+            const pos = document.getElementById('matrixPosition').value;
+
+            document.querySelectorAll('.matrix-cell').forEach(el => {
+                el.className = 'matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-1 border border-transparent transition-all';
+            });
+
+            let targetId = `cell-${trend === 'contraction' ? 'con' : 'exp'}-${vol}-${pos}`;
+            const targetEl = document.getElementById(targetId);
+
+            const cardTitle = document.getElementById('autoResultTitle');
+            const cardDesc = document.getElementById('autoResultDesc');
+            const cardBadge = document.getElementById('autoResultBadge');
+
+            let title = "", desc = "", badgeText = "";
+            let activeColor = "bg-[#9aa0a6]";
+
+            if (trend === 'contraction') {
+                badgeText = '逆勢操作';
+                if (vol === 'shrink' && pos === 'high') {
+                    title = '快速賣出'; desc = '盤整高點且量縮，上攻無力，應快速獲利了結。'; activeColor = 'bg-[#d93025]';
+                } else if (vol === 'expand' && pos === 'high') {
+                    title = '準備賣出'; desc = '盤整高點遇壓出量，提防假突破。'; activeColor = 'bg-[#f9ab00]';
+                } else if (vol === 'shrink' && pos === 'low') {
+                    title = '準備買入'; desc = '盤整低點且殺跌無力，可留意止跌訊號。'; activeColor = 'bg-[#f9ab00]';
+                } else if (vol === 'expand' && pos === 'low') {
+                    title = '快速買入'; desc = '盤整低點有買盤介入，勝率較高。'; activeColor = 'bg-[#1e8e3e]';
+                }
+            } else {
+                badgeText = '順勢操作 (追漲殺跌)';
+                if (vol === 'shrink' && pos === 'high') {
+                    title = '準備賣出'; desc = '趨勢高點遇量縮，量價背離，隨時可能反轉。'; activeColor = 'bg-[#f9ab00]';
+                } else if (vol === 'expand' && pos === 'high') {
+                    title = '繼續加碼'; desc = '趨勢高點且量大，多頭強勢，可順勢擴大部位。'; activeColor = 'bg-[#1a73e8]';
+                } else if (vol === 'shrink' && pos === 'low') {
+                    title = '繼續加空'; desc = '趨勢低點且量縮，空頭格局，不宜逆勢做多。'; activeColor = 'bg-[#d93025]';
+                } else if (vol === 'expand' && pos === 'low') {
+                    title = '準備買入'; desc = '趨勢低點遇恐慌殺出量，醞釀跌深反彈。'; activeColor = 'bg-[#f9ab00]';
+                }
+            }
+
+            if(targetEl) {
+                const textColor = activeColor === 'bg-[#f9ab00]' ? 'text-gray-900' : 'text-white';
+                targetEl.className = `matrix-cell ${activeColor} ${textColor} rounded-md flex flex-col items-center justify-center p-1 shadow-md transform scale-105 transition-all z-10`;
+            }
+
+            cardTitle.innerText = title;
+            cardDesc.innerText = desc;
+            cardBadge.innerText = badgeText;
+        }
+
         function calculate() {
-            const stockName = document.getElementById('stockName').value.trim() || '未輸入';
+            const stockDisplayName = document.getElementById('stockInput').value.trim() || '未填寫';
             const currentPriceInput = document.getElementById('currentPrice').value;
             const costPriceInput = document.getElementById('costPrice').value;
 
             if (!currentPriceInput || !costPriceInput) {
-                showMessage("請完整輸入現價與成本數值。");
+                showMessage("請確認現價與外資成本已填寫完整");
                 return;
             }
 
@@ -537,273 +729,232 @@
             const p140 = formatNumber(costPrice * 1.4);
             const p170 = formatNumber(costPrice * 1.7);
 
+            document.getElementById('res-104').innerText = p104;
+            document.getElementById('res-120').innerText = p120;
+            document.getElementById('res-140').innerText = p140;
+            document.getElementById('res-170').innerText = p170;
+
+            const calcDist = (target) => {
+                const pct = ((target - currentPrice) / currentPrice) * 100;
+                if (pct <= 0) return `<span class="text-[#202124] font-medium">已達標 ${Math.abs(pct).toFixed(1)}%</span>`;
+                return `距離尙有 +${pct.toFixed(1)}%`;
+            };
+
+            document.getElementById('dist-104').innerHTML = calcDist(p104);
+            document.getElementById('dist-120').innerHTML = calcDist(p120);
+            document.getElementById('dist-140').innerHTML = calcDist(p140);
+            document.getElementById('dist-170').innerHTML = calcDist(p170);
+
+            let waveTitle = "";
+            let waveDesc = "";
+            let progressPct = 0;
             let statusRange = "";
             let judgement = "";
 
+            const resetDots = () => {
+                ['cost','104','120','140','170'].forEach(id => {
+                    document.getElementById(`dot-${id}`).className = "w-3 h-3 rounded-full bg-[#dadce0] mb-2 shadow transition-colors";
+                });
+            };
+            resetDots();
+
             if (currentPrice < costPrice) {
+                waveTitle = "跌破成本線！需留意風險";
+                waveDesc = "現價低於法人成本，可能處於收貨盤整或弱勢下跌狀態。";
+                progressPct = 5;
                 statusRange = `小於 ${costPrice}`;
                 judgement = "【跌破成本】處於法人收貨盤整或弱勢狀態。";
+                document.getElementById('dot-cost').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
             } else if (currentPrice >= costPrice && currentPrice < p104) {
+                waveTitle = "醞釀期！尚未正式發動";
+                waveDesc = "現價已高於成本，正蓄勢挑戰 1.04 倍突破點。";
+                progressPct = 15;
                 statusRange = `${costPrice} ~ ${p104}`;
                 judgement = "【醞釀期】尚未正式發動，待站穩發動點。";
+                document.getElementById('dot-cost').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
             } else if (currentPrice >= p104 && currentPrice < p120) {
+                waveTitle = "已突破成本！進入上漲初期";
+                waveDesc = "站穩 1.04 倍，正朝第一波高點邁進。";
+                progressPct = 35;
                 statusRange = `${p104} ~ ${p120}`;
                 judgement = "【第一攻擊區】已發動，朝第一波高點邁進。";
+                document.getElementById('dot-cost').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                document.getElementById('dot-104').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
             } else if (currentPrice >= p120 && currentPrice < p140) {
+                waveTitle = "挑戰關卡二！面臨前波壓力";
+                waveDesc = "已達 1.2 倍目標，整理後可能挑戰 1.4 倍。";
+                progressPct = 60;
                 statusRange = `${p120} ~ ${p140}`;
                 judgement = "【第二攻擊區】面臨第一波高點壓力，或正朝第二波邁進。";
+                document.getElementById('dot-cost').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                document.getElementById('dot-104').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                document.getElementById('dot-120').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
             } else if (currentPrice >= p140 && currentPrice < p170) {
+                waveTitle = "極端高位區！隨時有下殺風險";
+                waveDesc = "突破 1.4 倍，波動加劇，留意獲利了結賣壓。";
+                progressPct = 85;
                 statusRange = `${p140} ~ ${p170}`;
                 judgement = "【極端高位區】現價已過高，隨時有下殺風險。";
-            } else if (currentPrice >= p170) {
+                document.getElementById('dot-cost').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                document.getElementById('dot-104').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                document.getElementById('dot-120').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                document.getElementById('dot-140').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+            } else {
+                waveTitle = "韭菜收割區！屬於極度危險區域";
+                waveDesc = "已達或超越 1.7 倍極限，切忌盲目追高。";
+                progressPct = 100;
                 statusRange = `大於等於 ${p170}`;
                 judgement = "【韭菜收割區】已達或超越極限，屬於極度危險區域。";
+                ['cost','104','120','140','170'].forEach(id => {
+                    document.getElementById(`dot-${id}`).classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                });
+            }
+
+            document.getElementById('waveTitle').innerText = waveTitle;
+            document.getElementById('waveDesc').innerText = waveDesc;
+            
+            setTimeout(() => {
+                document.getElementById('progressFill').style.width = `${progressPct}%`;
+            }, 100);
+
+            if (globalHistoricalData.length === 0) {
+                document.getElementById('matrixPosition').value = currentPrice > p120 ? 'high' : 'low';
+                updateMatrix();
             }
 
             const report = 
-`• 股票標的： [${stockName}]
+`• 股票標的： [${stockDisplayName}]
 • 輸入數據： 現價 [${currentPrice}] 元 / 成本 [${costPrice}] 元
 • 波段密碼計算：
   • 發動點（1.04倍）：[${p104}] 元
-    - 攤平或進場區間（1.04~1.06倍）：[${p104}] ~ [${p106}] 元
+    - 進場區間（1.04~1.06倍）：[${p104}] ~ [${p106}] 元
   • 第一波高點（1.2倍）：[${p120}] 元
-    - 先行獲利區（1.17~1.18倍）：[${p117}] ~ [${p118}] 元
+    - 先行獲利（1.17~1.18倍）：[${p117}] ~ [${p118}] 元
   • 第二波高點（1.4倍）：[${p140}] 元
-    - 先行獲利區（1.37~1.38倍）：[${p137}] ~ [${p138}] 元
+    - 先行獲利（1.37~1.38倍）：[${p137}] ~ [${p138}] 元
   • 終極韭菜區（1.7倍）：[${p170}] 元
 • 目前位階判定：
   • 現狀：現價落在 [${statusRange}]
   • 判定：[${judgement}]`;
 
             document.getElementById('resultText').value = report;
-            document.getElementById('outputSection').classList.remove('hidden');
-            
-            const copyBtn = document.getElementById('copyBtn');
-            copyBtn.innerText = "複製內容";
-            copyBtn.classList.remove('bg-green-100', 'text-green-700');
-            copyBtn.classList.add('bg-gray-100', 'text-gray-700');
+            document.getElementById('visualOutput').classList.remove('hidden');
+        }
+
+        function calculateDashboard() {
+            const cost = parseFloat(document.getElementById('simpleCostInput').value);
+            const d104 = document.getElementById('dash-104');
+            const d120 = document.getElementById('dash-120');
+            const d140 = document.getElementById('dash-140');
+            const d170 = document.getElementById('dash-170');
+            if (isNaN(cost) || cost <= 0) {
+                d104.innerText = '--'; d120.innerText = '--'; d140.innerText = '--'; d170.innerText = '--';
+                document.getElementById('dash-104-106').innerText = `進場區間: -- ~ --`;
+                document.getElementById('dash-117-118').innerText = `先行獲利: -- ~ --`;
+                document.getElementById('dash-137-138').innerText = `先行獲利: -- ~ --`;
+                return;
+            }
+            d104.innerText = (cost * 1.04).toFixed(2);
+            d120.innerText = (cost * 1.20).toFixed(2);
+            d140.innerText = (cost * 1.40).toFixed(2);
+            d170.innerText = (cost * 1.70).toFixed(2);
+            document.getElementById('dash-104-106').innerText = `進場區間: ${(cost*1.04).toFixed(2)} ~ ${(cost*1.06).toFixed(2)}`;
+            document.getElementById('dash-117-118').innerText = `先行獲利: ${(cost*1.17).toFixed(2)} ~ ${(cost*1.18).toFixed(2)}`;
+            document.getElementById('dash-137-138').innerText = `先行獲利: ${(cost*1.37).toFixed(2)} ~ ${(cost*1.38).toFixed(2)}`;
         }
 
         function copyToClipboard() {
             const textarea = document.getElementById('resultText');
             textarea.select();
             textarea.setSelectionRange(0, 99999); 
-            
             try {
                 document.execCommand('copy');
-                const copyBtn = document.getElementById('copyBtn');
-                copyBtn.innerText = "已複製";
-                copyBtn.classList.remove('bg-gray-100', 'text-gray-700');
-                copyBtn.classList.add('bg-green-100', 'text-green-700');
+                showMessage("文字報告已複製到剪貼簿");
             } catch (err) {
-                showMessage("複製失敗，請手動全選並複製。");
+                showMessage("複製失敗，請手動複製。");
             }
             window.getSelection().removeAllRanges();
         }
 
-        // --- Tab 2: 強勢股指南動態計算 ---
-        function calculateDashboard() {
-            const inputVal = document.getElementById('simpleCostInput').value;
-            const cost = parseFloat(inputVal);
-
-            const d104 = document.getElementById('dash-104');
-            const d120 = document.getElementById('dash-120');
-            const d140 = document.getElementById('dash-140');
-            const d170 = document.getElementById('dash-170');
-            const d104_106 = document.getElementById('dash-104-106');
-            const d117_118 = document.getElementById('dash-117-118');
-            const d137_138 = document.getElementById('dash-137-138');
-
-            if (isNaN(cost) || cost <= 0) {
-                d104.innerText = '--';
-                d120.innerText = '--';
-                d140.innerText = '--';
-                d170.innerText = '--';
-                if (d104_106) d104_106.innerText = '進場區間: -- ~ --';
-                if (d117_118) d117_118.innerText = '先行獲利: -- ~ --';
-                if (d137_138) d137_138.innerText = '先行獲利: -- ~ --';
-                return;
-            }
-
-            d104.innerText = (cost * 1.04).toFixed(2);
-            d120.innerText = (cost * 1.20).toFixed(2);
-            d140.innerText = (cost * 1.40).toFixed(2);
-            d170.innerText = (cost * 1.70).toFixed(2);
-            if (d104_106) d104_106.innerText = `進場區間: ${(cost * 1.04).toFixed(2)} ~ ${(cost * 1.06).toFixed(2)}`;
-            if (d117_118) d117_118.innerText = `先行獲利: ${(cost * 1.17).toFixed(2)} ~ ${(cost * 1.18).toFixed(2)}`;
-            if (d137_138) d137_138.innerText = `先行獲利: ${(cost * 1.37).toFixed(2)} ~ ${(cost * 1.38).toFixed(2)}`;
-        }
-
-        // --- Tab 3: 黃金分割率動態計算 ---
-        function calculateGoldenDashboard() {
-            const highInput = parseFloat(document.getElementById('grHigh').value);
-            const lowInput = parseFloat(document.getElementById('grLow').value);
-
-            const outUp382 = document.getElementById('gr-up-382');
-            const outUp500 = document.getElementById('gr-up-500');
-            const outUp618 = document.getElementById('gr-up-618');
-            const outDown382 = document.getElementById('gr-down-382');
-            const outDown500 = document.getElementById('gr-down-500');
-            const outDown618 = document.getElementById('gr-down-618');
-
-            if (isNaN(highInput) || isNaN(lowInput) || highInput <= lowInput) {
-                outUp382.innerText = '--';
-                outUp500.innerText = '--';
-                outUp618.innerText = '--';
-                outDown382.innerText = '--';
-                outDown500.innerText = '--';
-                outDown618.innerText = '--';
-                return;
-            }
-
-            const diff = highInput - lowInput;
-
-            outUp382.innerText = (highInput - diff * 0.382).toFixed(2);
-            outUp500.innerText = (highInput - diff * 0.500).toFixed(2);
-            outUp618.innerText = (highInput - diff * 0.618).toFixed(2);
-
-            outDown618.innerText = (lowInput + diff * 0.618).toFixed(2);
-            outDown500.innerText = (lowInput + diff * 0.500).toFixed(2);
-            outDown382.innerText = (lowInput + diff * 0.382).toFixed(2);
-        }
-
-        // --- Tab 4: 賺賠比動態計算 ---
         function calculateRR() {
             const entry = parseFloat(document.getElementById('rrEntry').value);
             const tp = parseFloat(document.getElementById('rrTP').value);
             const sl = parseFloat(document.getElementById('rrSL').value);
-
+            
             const resRR = document.getElementById('rr-result');
-            const resEval = document.getElementById('rr-eval');
-            const resReward = document.getElementById('rr-reward');
-            const resRisk = document.getElementById('rr-risk');
-
-            if (isNaN(entry) || isNaN(tp) || isNaN(sl) || entry <= 0 || tp <= 0 || sl <= 0 || tp <= entry || sl >= entry) {
+            const evalEl = document.getElementById('rr-eval');
+            
+            if (isNaN(entry) || isNaN(tp) || isNaN(sl) || tp <= entry || sl >= entry) {
                 resRR.innerText = '--';
-                resRR.className = 'text-5xl font-mono font-bold text-gray-800';
-                resEval.innerText = '等待合理輸入';
-                resEval.className = 'mt-2 text-sm font-bold px-3 py-1 rounded inline-block bg-gray-200 text-gray-600';
-                resReward.innerText = '--';
-                resRisk.innerText = '--';
+                evalEl.innerText = '等待合理輸入';
                 return;
             }
-
             const reward = tp - entry;
             const risk = entry - sl;
             const rr = reward / risk;
-
-            resReward.innerText = reward.toFixed(2);
-            resRisk.innerText = risk.toFixed(2);
+            
+            document.getElementById('rr-reward').innerText = reward.toFixed(2);
+            document.getElementById('rr-risk').innerText = risk.toFixed(2);
             resRR.innerText = rr.toFixed(2);
-
-            if (rr >= 2) {
-                resRR.className = 'text-5xl font-mono font-bold text-emerald-600';
-                resEval.innerText = '極佳優勢 (大於2)';
-                resEval.className = 'mt-2 text-sm font-bold px-3 py-1 rounded inline-block bg-emerald-100 text-emerald-700';
-            } else if (rr >= 1) {
-                resRR.className = 'text-5xl font-mono font-bold text-amber-500';
-                resEval.innerText = '尚可接受 (介於1~2)';
-                resEval.className = 'mt-2 text-sm font-bold px-3 py-1 rounded inline-block bg-amber-100 text-amber-700';
-            } else {
-                resRR.className = 'text-5xl font-mono font-bold text-rose-500';
-                resEval.innerText = '風險過高 (小於1)';
-                resEval.className = 'mt-2 text-sm font-bold px-3 py-1 rounded inline-block bg-rose-100 text-rose-700';
-            }
+            
+            if(rr >= 2) { evalEl.innerText = '極佳優勢 (大於2)'; evalEl.className = 'mt-3 text-sm font-medium px-3 py-1 rounded-sm inline-block bg-[#e6f4ea] text-[#137333] border border-[#ceead6]'; }
+            else if(rr >= 1) { evalEl.innerText = '尚可接受 (介於1~2)'; evalEl.className = 'mt-3 text-sm font-medium px-3 py-1 rounded-sm inline-block bg-[#fef7e0] text-[#b06000] border border-[#fde293]'; }
+            else { evalEl.innerText = '風險過高 (小於1)'; evalEl.className = 'mt-3 text-sm font-medium px-3 py-1 rounded-sm inline-block bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf]'; }
         }
 
-        // --- Tab 5: 脫水真實淨利計算 ---
+        function calculateGoldenDashboard() {
+            const h = parseFloat(document.getElementById('grHigh').value);
+            const l = parseFloat(document.getElementById('grLow').value);
+            if (isNaN(h) || isNaN(l) || h <= l) return;
+            const d = h - l;
+            document.getElementById('gr-up-382').innerText = (h - d * 0.382).toFixed(2);
+            document.getElementById('gr-up-500').innerText = (h - d * 0.500).toFixed(2);
+            document.getElementById('gr-up-618').innerText = (h - d * 0.618).toFixed(2);
+            document.getElementById('gr-down-618').innerText = (l + d * 0.618).toFixed(2);
+            document.getElementById('gr-down-500').innerText = (l + d * 0.500).toFixed(2);
+            document.getElementById('gr-down-382').innerText = (l + d * 0.382).toFixed(2);
+        }
+
         function calculateDehydrate() {
             const buy = parseFloat(document.getElementById('dhBuy').value);
-            let sell = parseFloat(document.getElementById('dhSell').value);
-            const sharesInput = parseFloat(document.getElementById('dhShares').value);
-            const discount = parseFloat(document.getElementById('dhDiscount').value);
-
-            const resNet = document.getElementById('dh-net');
-            const resBep = document.getElementById('dh-bep');
-            const resFees = document.getElementById('dh-fees');
-
-            if (isNaN(buy) || buy <= 0) {
-                resNet.innerText = '--';
-                resBep.innerText = '--';
-                resFees.innerText = '--';
-                resNet.className = 'text-5xl font-mono font-bold text-gray-800';
-                return;
-            }
-
-            const shares = isNaN(sharesInput) || sharesInput <= 0 ? 1000 : sharesInput;
-
-            // 計算買進總成本 (包含手續費)
-            let buyFee = Math.floor(buy * shares * 0.001425 * discount);
+            const sell = parseFloat(document.getElementById('dhSell').value);
+            const s = parseFloat(document.getElementById('dhShares').value) || 1000;
+            const disc = parseFloat(document.getElementById('dhDiscount').value);
+            
+            if (isNaN(buy)) return;
+            
+            let buyFee = Math.floor(buy * s * 0.001425 * disc);
             if (buyFee < 20) buyFee = 20;
-            const totalBuyCost = (buy * shares) + buyFee;
-
-            // 計算損益兩平價：所需賣出總額要等於 totalBuyCost
-            // 賣出總額 = SellPrice * shares
-            // 賣出手續費 = SellPrice * shares * 0.001425 * discount (假設大於20)
-            // 交易稅 = SellPrice * shares * 0.003
-            // 淨收入 = SellPrice * shares * (1 - 0.001425 * discount - 0.003)
-            // 淨收入 = totalBuyCost  => SellPrice = totalBuyCost / (shares * (1 - 0.001425 * discount - 0.003))
             
-            const bepFactor = shares * (1 - (0.001425 * discount) - 0.003);
-            let bepPrice = totalBuyCost / bepFactor;
+            const totCost = (buy * s) + buyFee;
+            let bep = totCost / (s * (1 - (0.001425 * disc) - 0.003));
+            if (Math.floor(bep * s * 0.001425 * disc) < 20) bep = (totCost + 20) / (s * (1 - 0.003));
             
-            // 檢查是否因為 20 元低消而有誤差
-            let checkBepFee = Math.floor(bepPrice * shares * 0.001425 * discount);
-            if (checkBepFee < 20) {
-                // 如果手續費不足20，重新套用固定20元手續費計算
-                // 淨收入 = SellPrice * shares - 20 - (SellPrice * shares * 0.003) = totalBuyCost
-                // SellPrice * shares * (1 - 0.003) = totalBuyCost + 20
-                bepPrice = (totalBuyCost + 20) / (shares * (1 - 0.003));
-            }
+            document.getElementById('dh-bep').innerText = bep.toFixed(2);
             
-            resBep.innerText = bepPrice.toFixed(2);
-
-            // 若有填寫賣出價，計算淨利與總稅費
-            if (!isNaN(sell) && sell > 0) {
-                let sellFee = Math.floor(sell * shares * 0.001425 * discount);
+            if(!isNaN(sell)) {
+                let sellFee = Math.floor(sell * s * 0.001425 * disc);
                 if (sellFee < 20) sellFee = 20;
-                const tax = Math.floor(sell * shares * 0.003);
+                const tax = Math.floor(sell * s * 0.003);
+                const net = (sell * s) - sellFee - tax - totCost;
                 
-                const totalRevenue = (sell * shares) - sellFee - tax;
-                const netProfit = totalRevenue - totalBuyCost;
-                const totalFees = buyFee + sellFee + tax;
-
-                resNet.innerText = (netProfit > 0 ? "+" : "") + Math.round(netProfit).toLocaleString();
-                resFees.innerText = Math.round(totalFees).toLocaleString();
-
-                if (netProfit > 0) {
-                    resNet.className = 'text-5xl font-mono font-bold text-emerald-600';
-                } else if (netProfit < 0) {
-                    resNet.className = 'text-5xl font-mono font-bold text-rose-600';
-                } else {
-                    resNet.className = 'text-5xl font-mono font-bold text-gray-800';
-                }
-            } else {
-                resNet.innerText = '--';
-                resFees.innerText = '--';
-                resNet.className = 'text-5xl font-mono font-bold text-gray-800';
+                document.getElementById('dh-net').innerText = (net > 0 ? "+" : "") + Math.round(net).toLocaleString();
+                document.getElementById('dh-fees').innerText = Math.round(buyFee + sellFee + tax).toLocaleString();
             }
         }
 
-        // 訊息提示框
         function showMessage(msg) {
-            const existingMsg = document.getElementById('custom-msg');
-            if (existingMsg) {
-                existingMsg.remove();
-            }
-
-            const msgDiv = document.createElement('div');
-            msgDiv.id = 'custom-msg';
-            msgDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
-            msgDiv.innerText = msg;
-
-            document.body.appendChild(msgDiv);
-
-            setTimeout(() => {
-                msgDiv.style.opacity = '0';
-                setTimeout(() => msgDiv.remove(), 300);
-            }, 3000);
+            const el = document.getElementById('custom-msg');
+            if (el) el.remove();
+            const div = document.createElement('div');
+            div.id = 'custom-msg';
+            div.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-[#202124] text-white px-6 py-3 rounded-md shadow-lg z-50 transition-opacity duration-300 font-medium text-sm';
+            div.innerText = msg;
+            document.body.appendChild(div);
+            setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 3000);
         }
+        
+        updateMatrix();
     </script>
 </body>
 </html>
