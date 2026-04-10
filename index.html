@@ -72,7 +72,7 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-[#5f6368] mb-2">查詢標的 (名稱與代號)</label>
+                            <label class="block text-xs font-medium text-[#5f6368] mb-2">查詢標的 (代號)</label>
                             <div class="flex space-x-2">
                                 <input type="text" id="stockInput" placeholder="輸入代號，例如：2330" 
                                     class="flex-1 px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] focus:border-[#1a73e8] outline-none transition text-[15px] bg-[#f8f9fa]">
@@ -80,6 +80,7 @@
                                     查詢
                                 </button>
                             </div>
+                            <p class="text-[11px] text-[#5f6368] mt-2">注意：如遇抓取不到資料的狀況時，請重新點選查詢或直接輸入現價與成本</p>
                         </div>
 
                         <div class="bg-[#f8f9fa] p-3 rounded-md border border-[#dadce0] flex flex-col justify-center">
@@ -171,10 +172,10 @@
 
                         <div id="autoStateWrapper">
                             <!-- 建議操作卡片 -->
-                            <div class="border border-[#dadce0] rounded-md p-4 mb-6 bg-white" id="autoResultCard">
+                            <div class="border border-[#dadce0] rounded-md p-4 mb-6 bg-[#f8f9fa]" id="autoResultCard">
                                 <div class="flex items-center mb-2">
                                     <span class="font-medium text-xl text-[#202124] mr-3" id="autoResultTitle">--</span>
-                                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-sm bg-[#f8f9fa] border border-[#dadce0] text-[#5f6368]" id="autoResultBadge">--</span>
+                                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-sm bg-white border border-[#dadce0] text-[#5f6368]" id="autoResultBadge">--</span>
                                 </div>
                                 <div class="text-sm text-[#5f6368] leading-relaxed" id="autoResultDesc">--</div>
                             </div>
@@ -189,43 +190,43 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa]">
                                     <div class="text-center font-medium text-xs text-[#5f6368] mb-3 tracking-wide">收縮狀態 (逆勢操作)</div>
-                                    <div class="grid grid-cols-2 gap-2 h-28">
-                                        <div id="cell-con-shrink-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                    <div class="grid grid-cols-2 gap-3 h-28">
+                                        <div id="cell-con-shrink-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-2">
                                             <span class="text-[10px] mb-1 opacity-90">量縮/高位</span>
-                                            <span class="text-sm font-medium">快速賣出</span>
+                                            <span class="font-medium text-sm tracking-wide">快速賣出</span>
                                         </div>
-                                        <div id="cell-con-expand-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                        <div id="cell-con-expand-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-2">
                                             <span class="text-[10px] mb-1 opacity-90">量大/高位</span>
-                                            <span class="text-sm font-medium">準備賣出</span>
+                                            <span class="font-medium text-sm tracking-wide">準備賣出</span>
                                         </div>
-                                        <div id="cell-con-shrink-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                        <div id="cell-con-shrink-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-2">
                                             <span class="text-[10px] mb-1 opacity-90">量縮/低位</span>
-                                            <span class="text-sm font-medium">準備買入</span>
+                                            <span class="font-medium text-sm tracking-wide">準備買入</span>
                                         </div>
-                                        <div id="cell-con-expand-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                        <div id="cell-con-expand-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-2">
                                             <span class="text-[10px] mb-1 opacity-90">量大/低位</span>
-                                            <span class="text-sm font-medium">快速買入</span>
+                                            <span class="font-medium text-sm tracking-wide">快速買入</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa]">
                                     <div class="text-center font-medium text-xs text-[#5f6368] mb-3 tracking-wide">擴張狀態 (順勢操作)</div>
-                                    <div class="grid grid-cols-2 gap-2 h-28">
-                                        <div id="cell-exp-shrink-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                    <div class="grid grid-cols-2 gap-3 h-28">
+                                        <div id="cell-exp-shrink-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-2">
                                             <span class="text-[10px] mb-1 opacity-90">量縮/高位</span>
-                                            <span class="text-sm font-medium">準備賣出</span>
+                                            <span class="font-medium text-sm tracking-wide">準備賣出</span>
                                         </div>
-                                        <div id="cell-exp-expand-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                        <div id="cell-exp-expand-high" class="matrix-cell rounded-md flex flex-col items-center justify-center p-2">
                                             <span class="text-[10px] mb-1 opacity-90">量大/高位</span>
-                                            <span class="text-sm font-medium">繼續加碼</span>
+                                            <span class="font-medium text-sm tracking-wide">繼續加碼</span>
                                         </div>
-                                        <div id="cell-exp-shrink-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                        <div id="cell-exp-shrink-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-2">
                                             <span class="text-[10px] mb-1 opacity-90">量縮/低位</span>
-                                            <span class="text-sm font-medium">繼續加空</span>
+                                            <span class="font-medium text-sm tracking-wide">繼續加空</span>
                                         </div>
-                                        <div id="cell-exp-expand-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-1 border border-[#dadce0]">
+                                        <div id="cell-exp-expand-low" class="matrix-cell rounded-md flex flex-col items-center justify-center p-2">
                                             <span class="text-[10px] mb-1 opacity-90">量大/低位</span>
-                                            <span class="text-sm font-medium">準備買入</span>
+                                            <span class="font-medium text-sm tracking-wide">準備買入</span>
                                         </div>
                                     </div>
                                 </div>
@@ -364,18 +365,18 @@
                             <div class="flex items-center text-[#5f6368] font-medium mb-3 text-sm">
                                 選股與四要件
                             </div>
-                            <p class="text-sm text-[#5f6368] mb-4">這套算法專門用於<span class="font-bold text-[#d93025]">強勢股</span>，進場前請確認符合以下四要件：</p>
+                            <p class="text-sm text-[#5f6368] mb-4">這套算法專門用於<span class="font-bold text-[#d93025]">強勢股</span>，進場前請確認符合要件：</p>
                             <ol class="list-decimal pl-4 text-sm text-[#3c4043] space-y-2 mb-5 ml-2">
                                 <li>必須是強勢股</li>
-                                <li>法人外資或投信持續加碼(至少不減碼)</li>
+                                <li>法人外資或投信持續加碼(不減碼)</li>
                                 <li>多頭線型(K線圖往右上角走)</li>
-                                <li>現價比成本高，或是差不多</li>
+                                <li>現價比成本高，或位階接近</li>
                             </ol>
                             <div class="bg-[#fef7e0] p-4 rounded-md border border-[#fde293]">
                                 <div class="text-[#b06000] font-medium text-xs mb-1 flex items-center">
                                     核心邏輯
                                 </div>
-                                <p class="text-xs text-[#b06000] leading-relaxed">法人推升股價的動機在於獲利，當現價高於其持有成本時，推升動力方能顯現。從低點推上去的過程叫做「收貨盤整」。</p>
+                                <p class="text-xs text-[#b06000] leading-relaxed">法人推升股價的動機在於獲利，當現價高於其持有成本時，推升動力方能顯現。從低點推上去的過程為「收貨盤整」。</p>
                             </div>
                         </div>
                     </div>
@@ -389,7 +390,7 @@
                                     <span class="text-xs text-[#1a73e8] font-medium block mt-1" id="dash-104-106">進場區間: -- ~ --</span>
                                 </div>
                             </div>
-                            <p class="text-sm text-[#5f6368] leading-relaxed">當現價站穩這個數字，就會往上移動，站不穩會繼續盤整。想攤平或進場，建議在 1.04 - 1.06 倍間操作。</p>
+                            <p class="text-sm text-[#5f6368] leading-relaxed">當現價站穩此數字，趨勢易向上推升。想攤平或進場，建議在 1.04 - 1.06 倍間操作。</p>
                         </div>
                         
                         <div class="bg-white rounded-md border-t-4 border-t-[#1e8e3e] border-l border-r border-b border-[#dadce0] p-5 flex flex-col google-shadow">
@@ -400,7 +401,7 @@
                                     <span class="text-xs text-[#1e8e3e] font-medium block mt-1" id="dash-117-118">先行獲利: -- ~ --</span>
                                 </div>
                             </div>
-                            <p class="text-sm text-[#5f6368] leading-relaxed">突破後大概走到這個位置會休息。建議在接近此價位時安全獲利了結。</p>
+                            <p class="text-sm text-[#5f6368] leading-relaxed">突破後抵達此位置易面臨休息。建議在接近此價位時安全獲利了結。</p>
                         </div>
                         
                         <div class="bg-white rounded-md border-t-4 border-t-[#f9ab00] border-l border-r border-b border-[#dadce0] p-5 flex flex-col google-shadow">
@@ -411,7 +412,7 @@
                                     <span class="text-xs text-[#f9ab00] font-medium block mt-1" id="dash-137-138">先行獲利: -- ~ --</span>
                                 </div>
                             </div>
-                            <p class="text-sm text-[#5f6368] leading-relaxed">經歷 3-5 日線盤整後再度上攻的高點。1.4 倍的波浪可能會有好幾次，若突破 1.4 倍才可能走向最後一波。</p>
+                            <p class="text-sm text-[#5f6368] leading-relaxed">經歷 3-5 日盤整後再度上攻的高點。若突破 1.4 倍才具備走向第三波的機會。</p>
                         </div>
                         
                         <div class="bg-white rounded-md border-t-4 border-t-[#d93025] border-l border-r border-b border-[#dadce0] p-5 flex flex-col google-shadow">
@@ -421,7 +422,7 @@
                                     <span class="text-3xl font-mono font-medium text-[#202124] block" id="dash-170">--</span>
                                 </div>
                             </div>
-                            <p class="text-sm text-[#5f6368] leading-relaxed">大多頭時第三峰會迅速抵達，高度最後會在此結束。買在略低於此價位容易套牢，應準備停損或等待法人成本重新墊高。</p>
+                            <p class="text-sm text-[#5f6368] leading-relaxed">大多頭時第三峰會迅速抵達，高度極易於此結束。買在略低於此價位容易套牢，應準備停損或等待法人成本重新墊高。</p>
                         </div>
                     </div>
 
@@ -432,9 +433,9 @@
                                 <span class="font-medium text-[#202124]">操作進階心法</span>
                             </div>
                             <div class="space-y-4 text-sm text-[#3c4043]">
-                                <div class="flex items-start"><span class="font-medium text-[#d93025] min-w-[70px]">警示訊號</span><span class="text-[#5f6368] leading-relaxed">若買入價格已逼近成本的 1.7 倍，極大機率正處於「韭菜區」，應果斷執行停損或避開。</span></div>
+                                <div class="flex items-start"><span class="font-medium text-[#d93025] min-w-[70px]">警示訊號</span><span class="text-[#5f6368] leading-relaxed">若買入價格已逼近成本的 1.7 倍，極大機率正處於危險區，應果斷執行停損或避開。</span></div>
                                 <div class="flex items-start"><span class="font-medium text-[#1a73e8] min-w-[70px]">動態調整</span><span class="text-[#5f6368] leading-relaxed">法人成本每日變動，計算目標價時應以當日最新成本為準。</span></div>
-                                <div class="flex items-start"><span class="font-medium text-[#f9ab00] min-w-[70px]">趨勢判定</span><span class="text-[#5f6368] leading-relaxed">現價若跌破法人成本，代表漲勢結束。必須等待法人成本重新墊高，且現價再次回到 1.04 倍以上才具備進場條件。</span></div>
+                                <div class="flex items-start"><span class="font-medium text-[#f9ab00] min-w-[70px]">趨勢判定</span><span class="text-[#5f6368] leading-relaxed">現價若跌破法人成本，代表漲勢結束。必須等待法人成本重新墊高，且現價重回 1.04 倍以上方具備進場條件。</span></div>
                                 <div class="flex items-start"><span class="font-medium text-[#5f6368] min-w-[70px]">汰弱留強</span><span class="text-[#5f6368] leading-relaxed">股價若長期低於法人成本，說明該標的已被主力放棄，不具備追蹤價值。</span></div>
                             </div>
                         </div>
@@ -635,58 +636,83 @@
             });
         }
 
-        // 高穩定度多重代理伺服器輪詢引擎 (Proxy Chain)
+        // 極致防阻擋 6 秒逾時輪詢機制 Proxy Chain
         async function fetchWithProxyRace(targetUrl) {
-            const encodeUrl = encodeURIComponent(targetUrl);
+            const cacheBuster = targetUrl.includes('?') ? `&_t=${Date.now()}` : `?_t=${Date.now()}`;
+            const encodeUrl = encodeURIComponent(targetUrl + cacheBuster);
+            
             const proxies = [
                 { url: `https://api.allorigins.win/get?url=${encodeUrl}`, type: 'allorigins' },
                 { url: `https://api.codetabs.com/v1/proxy?quest=${encodeUrl}`, type: 'raw' },
-                { url: `https://corsproxy.io/?${encodeUrl}`, type: 'raw' }
+                { url: `https://corsproxy.io/?${encodeUrl}`, type: 'raw' },
+                { url: `https://thingproxy.freeboard.io/fetch/${targetUrl}`, type: 'raw' },
+                { url: `https://api.allorigins.win/raw?url=${encodeUrl}`, type: 'raw' }
             ];
             
-            for (let p of proxies) {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒逾時切換
-                    const res = await fetch(p.url, { cache: 'no-store', signal: controller.signal });
-                    clearTimeout(timeoutId);
+            const promises = proxies.map(p => {
+                return new Promise(async (resolve, reject) => {
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => {
+                            controller.abort();
+                            reject(new Error('Timeout'));
+                        }, 6000); 
 
-                    if (res.status === 404) {
-                        return { status: 404 };
-                    }
-                    
-                    if (!res.ok) {
+                        const res = await fetch(p.url, { cache: 'no-store', signal: controller.signal });
+                        clearTimeout(timeoutId);
+
+                        if (res.status === 404) {
+                            resolve({ status: 404 });
+                            return;
+                        }
+                        if (!res.ok) {
+                            reject(new Error('HTTP Status ' + res.status));
+                            return;
+                        }
+
+                        let data;
                         if (p.type === 'allorigins') {
-                             const json = await res.json();
-                             if (json.status && json.status.http_code === 404) return { status: 404 };
-                        }
-                        continue;
-                    }
-
-                    let data;
-                    if (p.type === 'allorigins') {
-                        const json = await res.json();
-                        if(json.contents) {
-                            data = typeof json.contents === 'string' ? JSON.parse(json.contents) : json.contents;
+                            const json = await res.json();
+                            if (json.status && json.status.http_code === 404) {
+                                resolve({ status: 404 });
+                                return;
+                            }
+                            if (json.contents) {
+                                data = typeof json.contents === 'string' ? JSON.parse(json.contents) : json.contents;
+                            } else {
+                                reject(new Error('Empty content'));
+                                return;
+                            }
                         } else {
-                            continue;
+                            const text = await res.text();
+                            data = JSON.parse(text);
                         }
-                    } else {
-                        data = await res.json();
-                    }
 
-                    if (data && data.chart && data.chart.error && data.chart.error.code === 'Not Found') {
-                        return { status: 404 };
+                        if (data?.chart?.error?.code === 'Not Found') {
+                            resolve({ status: 404 });
+                            return;
+                        }
+                        if (data?.quotes) {
+                            resolve({ status: 200, data: data }); 
+                            return;
+                        }
+                        if (data?.chart?.result?.length > 0) {
+                            resolve({ status: 200, data: data });
+                            return;
+                        }
+
+                        reject(new Error('Invalid structure'));
+                    } catch (err) {
+                        reject(err);
                     }
-                    
-                    if (data && data.chart && data.chart.result && data.chart.result.length > 0) {
-                        return { status: 200, data: data };
-                    }
-                } catch (err) {
-                    console.log(`Proxy ${p.url} failed or timed out (5s), switching...`);
-                }
+                });
+            });
+
+            try {
+                return await Promise.any(promises);
+            } catch (e) {
+                return { status: 'error' };
             }
-            return { status: 'error' }; 
         }
 
         async function searchStock() {
@@ -701,111 +727,157 @@
             searchBtn.disabled = true;
 
             let codeInput = rawInput;
-            const match = rawInput.match(/[a-zA-Z0-9]+/g);
-            if (match) {
-                const potentialCode = match.find(s => /\d/.test(s));
-                if (potentialCode) {
-                    codeInput = potentialCode;
-                }
-            }
-
             let symbolsToTry = [];
-            if (codeInput.includes('.')) {
-                symbolsToTry = [codeInput];
+            
+            const matchNums = rawInput.match(/\d{4,}/);
+            if (!matchNums) {
+                const foundSymbol = await searchSymbolByName(rawInput);
+                if (foundSymbol) {
+                    symbolsToTry = [foundSymbol];
+                    codeInput = foundSymbol.split('.')[0];
+                } else {
+                    symbolsToTry = [`${rawInput}.TW`, `${rawInput}.TWO`];
+                }
             } else {
+                codeInput = matchNums[0];
                 symbolsToTry = [`${codeInput}.TW`, `${codeInput}.TWO`];
             }
 
             let found = false;
+            const endpoints = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
+
             for (let sym of symbolsToTry) {
-                try {
-                    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=6mo`;
-                    const result = await fetchWithProxyRace(url);
-                    
-                    if (result.status === 404) {
-                        continue; 
-                    }
-                    
-                    if (result.status === 200 && result.data) {
-                        const parsedData = result.data;
-                        const price = parsedData.chart.result[0].meta.regularMarketPrice;
-                        let name = parsedData.chart.result[0].meta.symbol;
-                        if(parsedData.chart.result[0].meta.shortName) name = parsedData.chart.result[0].meta.shortName;
-
-                        document.getElementById('stockInput').value = `${name} (${codeInput})`;
-                        document.getElementById('currentPrice').value = price;
-                        queryCodeInfo.code = codeInput;
-                        queryCodeInfo.name = name;
+                for (let endpoint of endpoints) {
+                    try {
+                        const url = `https://${endpoint}/v8/finance/chart/${sym}?interval=1d&range=6mo`;
+                        const result = await fetchWithProxyRace(url);
                         
-                        showMessage(`載入成功：${name} (${price})`);
-                        found = true;
+                        if (result.status === 404) continue; 
+                        
+                        if (result.status === 200 && result.data) {
+                            const parsedData = result.data;
+                            const price = parsedData.chart.result[0].meta.regularMarketPrice;
+                            let name = parsedData.chart.result[0].meta.symbol;
+                            if(parsedData.chart.result[0].meta.shortName) name = parsedData.chart.result[0].meta.shortName;
 
-                        if (parsedData.chart.result[0].timestamp && parsedData.chart.result[0].indicators.quote[0]) {
-                            const timestamps = parsedData.chart.result[0].timestamp;
-                            const quotes = parsedData.chart.result[0].indicators.quote[0];
-                            const validData = [];
-                            for(let i = 0; i < timestamps.length; i++) {
-                                if (quotes.close[i] !== null && quotes.volume[i] !== null) {
-                                    validData.push({ 
-                                        date: new Date(timestamps[i] * 1000).toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'}),
-                                        open: quotes.open[i],
-                                        high: quotes.high[i],
-                                        low: quotes.low[i],
-                                        close: quotes.close[i], 
-                                        volume: quotes.volume[i] 
-                                    });
+                            document.getElementById('stockInput').value = `${name} (${codeInput})`;
+                            document.getElementById('currentPrice').value = price;
+                            queryCodeInfo.code = codeInput;
+                            queryCodeInfo.name = name;
+                            
+                            showMessage(`載入成功：${name} (${price})`);
+                            found = true;
+
+                            if (parsedData.chart.result[0].timestamp && parsedData.chart.result[0].indicators.quote[0]) {
+                                const timestamps = parsedData.chart.result[0].timestamp;
+                                const quotes = parsedData.chart.result[0].indicators.quote[0];
+                                const validData = [];
+                                for(let i = 0; i < timestamps.length; i++) {
+                                    if (quotes.close[i] !== null && quotes.volume[i] !== null) {
+                                        validData.push({ 
+                                            date: new Date(timestamps[i] * 1000).toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'}),
+                                            open: quotes.open[i],
+                                            high: quotes.high[i],
+                                            low: quotes.low[i],
+                                            close: quotes.close[i], 
+                                            volume: quotes.volume[i] 
+                                        });
+                                    }
                                 }
-                            }
-                            
-                            const fullCloses = validData.map(d => d.close);
-                            const ma5Full = getMA(fullCloses, 5);
-                            const ma20Full = getMA(fullCloses, 20);
+                                
+                                const fullCloses = validData.map(d => d.close);
+                                const ma5Full = getMA(fullCloses, 5);
+                                const ma20Full = getMA(fullCloses, 20);
 
-                            const last60 = validData.slice(-60);
-                            const last60Ma5 = ma5Full.slice(-60);
-                            const last60Ma20 = ma20Full.slice(-60);
-                            
-                            const high20Arr = [];
-                            const low20Arr = [];
-                            for(let i = 0; i < last60.length; i++) {
-                                const endIdx = validData.length - 60 + i;
-                                const startIdx = Math.max(0, endIdx - 19);
-                                const windowData = validData.slice(startIdx, endIdx + 1);
-                                high20Arr.push(Math.max(...windowData.map(d => d.high)));
-                                low20Arr.push(Math.min(...windowData.map(d => d.low)));
-                            }
+                                const last60 = validData.slice(-60);
+                                const last60Ma5 = ma5Full.slice(-60);
+                                const last60Ma20 = ma20Full.slice(-60);
+                                
+                                const high20Arr = [];
+                                const low20Arr = [];
+                                for(let i = 0; i < last60.length; i++) {
+                                    const endIdx = validData.length - 60 + i;
+                                    const startIdx = Math.max(0, endIdx - 19);
+                                    const windowData = validData.slice(startIdx, endIdx + 1);
+                                    high20Arr.push(Math.max(...windowData.map(d => d.high)));
+                                    low20Arr.push(Math.min(...windowData.map(d => d.low)));
+                                }
 
-                            globalHistoricalData = {
-                                date: last60.map(d => d.date),
-                                open: last60.map(d => d.open),
-                                high: last60.map(d => d.high),
-                                low: last60.map(d => d.low),
-                                close: last60.map(d => d.close),
-                                volume: last60.map(d => d.volume),
-                                ma5: last60Ma5,
-                                ma20: last60Ma20,
-                                high20: high20Arr,
-                                low20: low20Arr
-                            };
-                            
-                            renderChartAndVolPrice();
-                            runAutoDetection();
-                            updateSummaryTable(price, parseFloat(document.getElementById('costPrice').value));
+                                globalHistoricalData = {
+                                    date: last60.map(d => d.date),
+                                    open: last60.map(d => d.open),
+                                    high: last60.map(d => d.high),
+                                    low: last60.map(d => d.low),
+                                    close: last60.map(d => d.close),
+                                    volume: last60.map(d => d.volume),
+                                    ma5: last60Ma5,
+                                    ma20: last60Ma20,
+                                    high20: high20Arr,
+                                    low20: low20Arr
+                                };
+                                
+                                renderChartAndVolPrice();
+                                runAutoDetection();
+                                updateSummaryTable(price, parseFloat(document.getElementById('costPrice').value));
+                            }
+                            break;
                         }
-                        break;
+                    } catch (e) {
+                        console.log("Fetch iteration error");
                     }
-                } catch (e) {
-                    console.log("Fetch iter failed", e);
                 }
+                if (found) break;
             }
 
             if (!found) {
-                showMessage("無法取得報價資料，請確認代號或手動輸入。");
+                showMessage("無法取得報價資料，請確認代號或嘗試手動輸入。");
                 document.getElementById('chartSection').classList.add('hidden');
             }
             
             searchBtn.innerText = "查詢";
             searchBtn.disabled = false;
+        }
+
+        async function searchSymbolByName(query) {
+            const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=5`;
+            const res = await fetchWithProxyRace(url);
+            if (res.status === 200 && res.data && res.data.quotes && res.data.quotes.length > 0) {
+                const twStock = res.data.quotes.find(q => (q.symbol.endsWith('.TW') || q.symbol.endsWith('.TWO')) && q.quoteType === 'EQUITY');
+                if (twStock) return twStock.symbol;
+                return res.data.quotes[0].symbol;
+            }
+            return null;
+        }
+
+        // 取出矩陣判斷結果供連動使用
+        function getMatrixStateInfo(closes, vols) {
+            const currentPrice = closes[closes.length - 1];
+            const currentVol = vols[vols.length - 1];
+            const max20 = Math.max(...closes.slice(-20));
+            const min20 = Math.min(...closes.slice(-20));
+            const midPoint = (max20 + min20) / 2;
+            const pos = currentPrice >= midPoint ? 'high' : 'low';
+            
+            const last20Vols = vols.slice(-20);
+            const avgVol = last20Vols.reduce((a,b) => a+b, 0) / last20Vols.length;
+            const volState = currentVol > avgVol ? 'expand' : 'shrink';
+            
+            const price5DaysAgo = closes[Math.max(0, closes.length - 5)];
+            const trend = Math.abs((currentPrice - price5DaysAgo) / price5DaysAgo) > 0.02 ? 'expansion' : 'contraction';
+
+            let action = "", colorHex = "";
+            if (trend === 'contraction') {
+                if (volState === 'shrink' && pos === 'high') { action = '快速賣出'; colorHex = '#d93025'; }
+                else if (volState === 'expand' && pos === 'high') { action = '準備賣出'; colorHex = '#f9ab00'; }
+                else if (volState === 'shrink' && pos === 'low') { action = '準備買入'; colorHex = '#1a73e8'; }
+                else if (volState === 'expand' && pos === 'low') { action = '快速買入'; colorHex = '#1e8e3e'; }
+            } else {
+                if (volState === 'shrink' && pos === 'high') { action = '準備賣出'; colorHex = '#f9ab00'; }
+                else if (volState === 'expand' && pos === 'high') { action = '繼續加碼'; colorHex = '#1e8e3e'; }
+                else if (volState === 'shrink' && pos === 'low') { action = '繼續加空'; colorHex = '#d93025'; }
+                else if (volState === 'expand' && pos === 'low') { action = '準備買入'; colorHex = '#1a73e8'; }
+            }
+            return { action, colorHex };
         }
 
         function renderChartAndVolPrice() {
@@ -870,6 +942,7 @@
                 }
             });
 
+            // 判斷 K線型態
             const tOpen = opens[opens.length - 1];
             const tClose = closes[closes.length - 1];
             const tHigh = highs[highs.length - 1];
@@ -878,13 +951,8 @@
             const yLow = lows[lows.length - 2];
 
             let klineHtml = "";
-
-            if (tLow > yHigh) {
-                klineHtml += "<li>向上跳空缺口：買盤強勢表態，籌碼積極。</li>";
-            }
-            if (tHigh < yLow) {
-                klineHtml += "<li>向下跳空缺口：賣壓沉重，盤勢偏向弱勢。</li>";
-            }
+            if (tLow > yHigh) klineHtml += "<li>向上跳空缺口：買盤強勢表態，籌碼積極。</li>";
+            if (tHigh < yLow) klineHtml += "<li>向下跳空缺口：賣壓沉重，盤勢偏向弱勢。</li>";
             
             const isRed = tClose > tOpen;
             const body = Math.abs(tClose - tOpen);
@@ -892,13 +960,11 @@
             const lower = Math.min(tClose, tOpen) - tLow;
             const total = tHigh - tLow;
 
-            let kType = "";
-            let kDesc = "";
-
+            let kType = "", kDesc = "";
             if (total === 0) {
                 kType = "一字線"; kDesc = "多空陷入僵持狀態。";
             } else if (isRed) {
-                if (upper < total * 0.05 && lower < total * 0.05) { kType = "光頭光腳大陽線"; kDesc = "強勢上漲，買盤極度積極。"; }
+                if (upper < total * 0.05 && lower < total * 0.05) { kType = "光頭光腳大陽線"; kDesc = "強勢上漲，買方極度強勢。"; }
                 else if (upper < total * 0.05) { kType = "光頭陽線"; kDesc = "先跌後漲，買方力道強勁。"; }
                 else if (lower < total * 0.05) { kType = "光腳陽線"; kDesc = "買方強勢，實體越長漲勢越穩。"; }
                 else if (lower >= body * 2 && upper <= body) { kType = "陽線錘子"; kDesc = "具備反轉特徵，下檔有撐。"; }
@@ -922,6 +988,7 @@
             klineHtml += `<li>${kType}：${kDesc}</li>`;
             document.getElementById('klineAnalysis').innerHTML = klineHtml;
 
+            // 14 條量價關係實戰判斷 (連動決策矩陣狀態)
             const currentVol = vols[vols.length - 1];
             const prevVol = vols[vols.length - 2];
             const prevPrice = closes[closes.length - 2];
@@ -929,7 +996,7 @@
             const volChangePct = ((currentVol - prevVol) / prevVol) * 100;
             const cMa20 = ma20[ma20.length - 1];
 
-            let pStatus = (changePct > 0.5) ? "價漲" : (changePct < -0.5) ? "價跌" : "價平";
+            let pStatus = (Math.abs(changePct) <= 1.5) ? "價平" : (changePct > 1.5) ? "價漲" : "價跌";
             let vStatus = "量平";
             if (volChangePct > 10) vStatus = "量增";
             else if (volChangePct < -10) {
@@ -937,66 +1004,82 @@
             }
 
             let vpTag = pStatus + vStatus;
-            let vpDesc = "";
-            let tagColor = "bg-[#f8f9fa] text-[#5f6368] border-[#dadce0]";
+            if (vpTag === "價平量縮") vpTag = "價平量減"; 
+            if (vpTag === "價漲量縮") vpTag = "價漲量減";
 
+            let vpDesc = "";
             let trendPhase = "";
             const distFromMA20 = (tClose - cMa20) / cMa20;
-            if (tClose < cMa20) {
-                trendPhase = "跌勢中";
-            } else if (distFromMA20 > 0.15) {
-                trendPhase = "已漲了一段時間";
-            } else if (distFromMA20 > 0.03 && distFromMA20 <= 0.15) {
-                trendPhase = "漲勢初期";
-            } else {
-                trendPhase = "整理期";
-            }
+
+            if (tClose < cMa20) trendPhase = "跌勢中";
+            else if (distFromMA20 > 0.15) trendPhase = "已漲了一段時間";
+            else if (distFromMA20 > 0.03 && distFromMA20 <= 0.15) trendPhase = "漲勢初期";
+            else trendPhase = "整理期";
 
             if (trendPhase === "整理期") {
-                if (vpTag === "價平量平") { vpDesc = "要大行情還有的等不必急於介入。"; }
+                if (vpTag === "價平量平") { vpDesc = "大行情仍需時間醞釀，不必急於介入。"; }
                 else { vpDesc = "盤整階段，等待明確突破訊號。"; }
             } else if (trendPhase === "漲勢初期") {
-                if (vpTag === "價平量增") { vpDesc = "可以懷疑是主力進場宜跟進。"; tagColor = "bg-[#1a73e8] text-white border-[#1a73e8]"; }
-                else if (vpTag === "價平量減" || vpTag === "價平量縮") { vpDesc = "高點將現應注意後勢發展。"; tagColor = "bg-[#f9ab00] text-white border-[#f9ab00]"; }
-                else if (vpTag === "價漲量增") { vpDesc = "表示漲勢已成可買進。"; tagColor = "bg-[#1e8e3e] text-white border-[#1e8e3e]"; }
-                else if (vpTag === "價漲量減" || vpTag === "價漲量縮") { vpDesc = "可能會曇花一現還有得等。"; tagColor = "bg-[#f9ab00] text-white border-[#f9ab00]"; }
-                else if (vpTag === "價漲量平") { vpDesc = "價量背離不會太持久。"; tagColor = "bg-[#d93025] text-white border-[#d93025]"; }
+                if (vpTag === "價平量增") { vpDesc = "疑為主進場跡象，宜適度跟進。"; }
+                else if (vpTag === "價平量減") { vpDesc = "高點將現，請留意後續發展。"; }
+                else if (vpTag === "價漲量增") { vpDesc = "漲勢已成，具備買進條件。"; }
+                else if (vpTag === "價漲量減") { vpDesc = "漲勢恐為曇花一現，仍待整理。"; }
+                else if (vpTag === "價漲量平") { vpDesc = "價量出現背離，漲勢難以持久。"; }
             } else if (trendPhase === "已漲了一段時間") {
-                if (vpTag === "價平量增") { vpDesc = "股價漲勢暫時受阻但應該尚有高點可期。"; tagColor = "bg-[#1a73e8] text-white border-[#1a73e8]"; }
-                else if (vpTag === "價漲量增") { vpDesc = "如係近期巨量可能是主力出貨徵兆。"; tagColor = "bg-[#d93025] text-white border-[#d93025]"; }
-                else if (vpTag === "價漲量減" || vpTag === "價漲量縮") { vpDesc = "注意行情是否到頂3天內易反轉。"; tagColor = "bg-[#d93025] text-white border-[#d93025]"; }
-                else if (vpTag === "價漲量平") { vpDesc = "行情未立即反轉，仍有待觀察。"; tagColor = "bg-[#f9ab00] text-white border-[#f9ab00]"; }
+                if (vpTag === "價平量增") { vpDesc = "漲勢暫時受阻，應尚有高點可期。"; }
+                else if (vpTag === "價漲量增") { vpDesc = "若屬近期巨量，恐為主出貨徵兆。"; }
+                else if (vpTag === "價漲量減") { vpDesc = "留意行情觸頂，三日內易生反轉。"; }
+                else if (vpTag === "價漲量平") { vpDesc = "行情未見反轉，應持續觀察後續力道。"; }
             } else if (trendPhase === "跌勢中") {
-                if (vpTag === "價平量增") { vpDesc = "可能已止跌回升可嘗試介入。"; tagColor = "bg-[#1e8e3e] text-white border-[#1e8e3e]"; }
-                else if (vpTag === "價平量減" || vpTag === "價平量縮") { vpDesc = "意謂量縮打底補量成底。"; tagColor = "bg-[#1a73e8] text-white border-[#1a73e8]"; }
-                else if (vpTag === "價跌量平") { vpDesc = "如股價剛跌則上不宜介入；如已跌了一段則可視為初次探底。"; tagColor = "bg-[#f9ab00] text-white border-[#f9ab00]"; }
-                else if (vpTag === "價跌量縮" || vpTag === "價跌量減") { vpDesc = "如股價剛跌則表示跌勢仍進行中；如已跌了一段且量縮到很小則表示底部即將出現。"; tagColor = "bg-[#1a73e8] text-white border-[#1a73e8]"; }
-                else if (vpTag === "價跌量增") { vpDesc = "如股價長期不動則有可能是主力進貨可留意；如已上漲一段則表示跌勢儼然成形後勢不樂觀。"; tagColor = "bg-[#d93025] text-white border-[#d93025]"; }
+                if (vpTag === "價平量增") { vpDesc = "已見止跌回升特徵，可嘗試分批介入。"; }
+                else if (vpTag === "價平量減" || vpTag === "價平量縮") { vpDesc = "量縮打底，未來補量有利成底。"; vpTag = "價平量減"; }
+                else if (vpTag === "價跌量平") { vpDesc = "如剛起跌則不宜介入；若深跌可視為初次探底。"; }
+                else if (vpTag === "價跌量縮" || vpTag === "價跌量減") { vpDesc = "如剛起跌表示跌勢持續；若深跌且極度量縮表示底部將現。"; vpTag = "價跌量縮"; }
+                else if (vpTag === "價跌量增") { vpDesc = "長期沉寂標的疑為主進貨；若在高檔跌破則跌勢成形後市保守。"; }
             }
 
             if (!vpDesc) {
                 vpDesc = "量價無明顯極端徵兆，維持原趨勢判斷。";
             }
 
+            // 取得矩陣判斷並套用顏色標籤
+            const matrixState = getMatrixStateInfo(closes, vols);
+            let tagColor = "bg-[#f8f9fa] text-[#5f6368] border-[#dadce0]";
+
+            if (matrixState.colorHex === '#d93025') tagColor = "bg-[#d93025] text-white border-[#d93025]";
+            else if (matrixState.colorHex === '#f9ab00') tagColor = "bg-[#f9ab00] text-white border-[#f9ab00]";
+            else if (matrixState.colorHex === '#1a73e8') tagColor = "bg-[#1a73e8] text-white border-[#1a73e8]";
+            else if (matrixState.colorHex === '#1e8e3e') tagColor = "bg-[#1e8e3e] text-white border-[#1e8e3e]";
+
             const volPriceTag = document.getElementById('volPriceTag');
             const volPriceDesc = document.getElementById('volPriceDesc');
-            volPriceTag.innerText = vpTag;
+            volPriceTag.innerText = `${vpTag} / ${matrixState.action}`;
             volPriceTag.className = `px-3 py-1 rounded-sm text-sm font-medium mr-4 whitespace-nowrap border ${tagColor}`;
             volPriceDesc.innerText = vpDesc;
 
-            const cMa5 = ma5[ma5.length - 1];
+            // 操盤手視角
             const hAdv = document.getElementById('holderAdvice');
             const eAdv = document.getElementById('entryAdvice');
             
-            if (tClose > cMa5 && cMa5 > cMa20) {
-                hAdv.innerText = "股價站上周線與月線，多方格局確立。建議持股續抱，設定跌破周線為出場基準以保住利潤。";
-                eAdv.innerText = "趨勢明顯向上，逢回測未破均線支撐具備佈局價值。乖離過大請避免追高，耐心等候量縮拉回。";
-            } else if (tClose < cMa20) {
-                hAdv.innerText = "技術面呈現弱勢。為防範下檔風險擴大，建議適度減碼，嚴守停損紀律以保留資金實力。";
-                eAdv.innerText = "空方掌控盤勢，底部訊號未明。建議維持空手觀望，靜待量縮企穩的落底跡象。";
-            } else {
-                hAdv.innerText = "陷入區間震盪。建議持續觀察關鍵價位，跌破重要支撐或帶量跌破頸線需視情況減碼。";
-                eAdv.innerText = "盤勢尚在醞釀階段。建議耐心等待量能放大或明確的技術面突破訊號出現後，再行評估介入。";
+            if (trendPhase === "漲勢初期" || trendPhase === "已漲了一段時間") {
+                if (pStatus === "價跌" && vStatus === "量增") {
+                    hAdv.innerText = "高檔湧現帶量賣壓，防守線面臨考驗，跌破短期均線請嚴格執行停利。";
+                    eAdv.innerText = "籌碼明顯鬆動，強勢回檔具備風險，靜待量縮企穩跡象浮現再行評估。";
+                } else {
+                    hAdv.innerText = "多方格局延續，順勢持股續抱，可設定月線或特定長紅K棒低點做為防守基準。";
+                    eAdv.innerText = "趨勢偏多運行，逢回測支撐未破為良好切入時機，乖離過大忌盲目追高。";
+                }
+            } else if (trendPhase === "跌勢中") {
+                if (vpTag === "價平量增" || vpTag === "價平量減" || vpTag === "價跌量縮") {
+                    hAdv.innerText = "跌勢趨緩初見築底跡象，持股達停損標準須確實斷尾，未達則觀察後續補量表態。";
+                    eAdv.innerText = "低檔量縮盤底階段，可嘗試分批試單並嚴格設定跌破前低出場。";
+                } else {
+                    hAdv.innerText = "技術面仍受空方壓制，反彈力道偏弱，應適度調降部位以控制資金下檔風險。";
+                    eAdv.innerText = "空頭趨勢未獲扭轉，貿然承接易遭套牢，維持空手觀望策略最佳。";
+                }
+            } else { 
+                hAdv.innerText = "股價處於橫盤整理，動能尚未表態，依循箱型區間高低點進行減碼或續留動作。";
+                eAdv.innerText = "方向尚未明朗，無須急於提前押寶，等待帶量突破壓力區後順勢介入。";
             }
         }
 
@@ -1073,7 +1156,7 @@
             }
 
             if(targetEl) {
-                targetEl.className = `matrix-cell ${activeColor} ${activeText} rounded-md flex flex-col items-center justify-center p-2 shadow-md transform scale-105 transition-all z-10 font-bold`;
+                targetEl.className = `matrix-cell ${activeColor} ${activeText} rounded-md flex flex-col items-center justify-center p-2 shadow-md transform scale-105 transition-all z-10 font-bold border-2 border-[#202124]`;
             }
 
             cardTitle.innerText = title;
