@@ -32,6 +32,39 @@
         
         .progress-bar-bg { background-color: #f1f3f4; }
         .progress-bar-fill { background-color: #1a73e8; }
+        
+        /* Tooltip 樣式 */
+        .tooltip-icon {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            line-height: 14px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: #dadce0;
+            color: #5f6368;
+            font-size: 10px;
+            margin-left: 4px;
+            cursor: help;
+            position: relative;
+        }
+        .tooltip-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #202124;
+            color: #ffffff;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 50;
+            margin-bottom: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-weight: normal;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-2 md:p-4">
@@ -72,15 +105,15 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-[#5f6368] mb-2">查詢標的 (僅限代號)</label>
+                            <label class="block text-xs font-medium text-[#5f6368] mb-2">查詢標的 (名稱與代號)</label>
                             <div class="flex space-x-2">
-                                <input type="text" id="stockInput" placeholder="輸入數字代號，例如：2330" 
+                                <input type="text" id="stockInput" placeholder="輸入代號或名稱，例如：2330 或是 台積電" 
                                     class="flex-1 px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] focus:border-[#1a73e8] outline-none transition text-[15px] bg-[#f8f9fa]">
                                 <button onclick="searchStock()" id="searchBtn" class="bg-[#1a73e8] hover:bg-[#1558d6] text-white font-medium py-2 px-6 rounded-md transition whitespace-nowrap">
                                     查詢
                                 </button>
                             </div>
-                            <p class="text-[11px] text-[#5f6368] mt-2">注意：如遇抓取不到資料的狀況時，請點選查詢或直接輸入現價與成本</p>
+                            <p class="text-[11px] text-[#5f6368] mt-2">注意：如遇抓取不到資料的狀況時，請重新點選查詢或直接輸入現價與成本</p>
                         </div>
 
                         <div class="bg-[#f8f9fa] p-3 rounded-md border border-[#dadce0] flex flex-col justify-center">
@@ -272,7 +305,7 @@
                                 </table>
                             </div>
                             <div class="text-[11px] text-[#5f6368] mt-3 leading-relaxed bg-[#f8f9fa] p-3 rounded-md border border-[#dadce0]">
-                                註：建議停損價預設以當前收盤價之下跌 7% 作為防守基準。保守型投資人可設 5-10%；積極型投資人可設 15-20%。
+                                註：建議停損價預設以當前收盤價之下跌 7% 作為防守基準。保守型可設 5-10%；積極型可設 15-20%。
                             </div>
                         </div>
                     </div>
@@ -424,7 +457,7 @@
                                     <span class="text-xs text-[#f9ab00] font-medium block mt-1" id="dash-137-138">先行獲利: -- ~ --</span>
                                 </div>
                             </div>
-                            <p class="text-sm text-[#5f6368] leading-relaxed">經歷 3-5 日線盤整後再度上攻的高點。若突破 1.4 倍才具備走向末升段的機會。</p>
+                            <p class="text-sm text-[#5f6368] leading-relaxed">經歷 3-5 日盤整後再度上攻的高點。若突破 1.4 倍才具備走向末升段的機會。</p>
                         </div>
                         
                         <div class="bg-white rounded-md border-t-4 border-t-[#d93025] border-l border-r border-b border-[#dadce0] p-5 flex flex-col google-shadow">
@@ -648,26 +681,31 @@
             });
         }
 
-        // 終極防阻擋機制：20 條高併發代理輪詢引擎 (Promise.any) 解決延遲與阻擋
+        // 終極防阻擋機制：20 條高併發代理輪詢引擎 (Promise.any)
         async function fetchWithProxyRace(targetUrl) {
+            const cacheBuster = targetUrl.includes('?') ? `&_t=${Date.now()}` : `?_t=${Date.now()}`;
+            const encodeUrl = encodeURIComponent(targetUrl + cacheBuster);
+            const rawUrl = targetUrl + cacheBuster;
+            
             const baseProxies = [
-                (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
-                (u) => `https://api.allorigins.hexlet.app/get?url=${encodeURIComponent(u)}`,
-                (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-                (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
-                (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
-                (u) => `https://api.cors.lol/?url=${encodeURIComponent(u)}`,
-                (u) => `https://corsproxy.org/?${encodeURIComponent(u)}`,
-                (u) => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(u)}`
+                (u, eu) => `https://api.allorigins.win/get?url=${eu}`,
+                (u, eu) => `https://api.codetabs.com/v1/proxy?quest=${eu}`,
+                (u, eu) => `https://corsproxy.io/?url=${eu}`,
+                (u, eu) => `https://api.allorigins.win/raw?url=${eu}`,
+                (u, eu) => `https://thingproxy.freeboard.io/fetch/${u}`,
+                (u, eu) => `https://api.cors.lol/?url=${eu}`,
+                (u, eu) => `https://corsproxy.org/?${eu}`,
+                (u, eu) => `https://cors-proxy.htmldriven.com/?url=${eu}`
             ];
 
             const promises = [];
             
-            // 產生 20 條動態連線，附帶防快取亂數
             for (let i = 0; i < 20; i++) {
                 const proxyFn = baseProxies[i % baseProxies.length];
-                const cacheBuster = targetUrl.includes('?') ? `&_rnd=${Math.random().toString(36).substring(2)}${Date.now()}${i}` : `?_rnd=${Math.random().toString(36).substring(2)}${Date.now()}${i}`;
-                const pUrl = proxyFn(targetUrl + cacheBuster);
+                const cb = `&_rnd=${Math.random().toString(36).substring(2)}${Date.now()}${i}`;
+                const dynRawUrl = targetUrl + cb;
+                const dynEncUrl = encodeURIComponent(dynRawUrl);
+                const pUrl = proxyFn(dynRawUrl, dynEncUrl);
                 const isAllOriginsGet = pUrl.includes('/get?url=');
 
                 promises.push(new Promise(async (resolve, reject) => {
@@ -675,7 +713,7 @@
                     const timeoutId = setTimeout(() => {
                         controller.abort();
                         reject(new Error('Timeout'));
-                    }, 6000); // 6秒內搶答制
+                    }, 6000); 
 
                     try {
                         const res = await fetch(pUrl, { cache: 'no-store', signal: controller.signal });
@@ -745,7 +783,7 @@
             for (let sym of symbolsToTry) {
                 for (let endpoint of endpoints) {
                     try {
-                        const url = `https://${endpoint}/v8/finance/chart/${sym}?interval=1d&range=1y`; // 改抓一年以利計算季線
+                        const url = `https://${endpoint}/v8/finance/chart/${sym}?interval=1d&range=1y`; 
                         const result = await fetchWithProxyRace(url);
                         
                         if (result.status === 404) break; 
@@ -764,7 +802,6 @@
                             showMessage(`載入成功：${name} (${price})`);
                             found = true;
 
-                            // 併發嘗試抓取 quote 以取得 EPS 與 PER
                             try {
                                 const quoteUrl = `https://${endpoint}/v7/finance/quote?symbols=${sym}`;
                                 const quoteRes = await fetchWithProxyRace(quoteUrl);
@@ -849,7 +886,6 @@
             searchBtn.disabled = false;
         }
 
-        // 基本面分析渲染
         function renderEpsPerAnalysis() {
             const epsAnalysisEl = document.getElementById('epsPerAnalysis');
             if(!epsAnalysisEl) return;
@@ -863,7 +899,7 @@
                 epsPerHtml += `<p class="mb-1"><span class="font-medium text-[#202124]">本益比 (PER):</span> ${pe.toFixed(2)} 倍。回本所需年數。</p>`;
                 
                 if (eps < 0) {
-                    epsPerHtml += `<p class="text-[#d93025] font-medium mt-2">公司目前處於虧損狀態，本益比失去參考價值，建議避開或謹慎評估。</p>`;
+                    epsPerHtml += `<p class="text-[#d93025] font-medium mt-2">公司目前處於虧損狀態，本益比失去參考價值，新手建議避開或謹慎評估。</p>`;
                 } else {
                     if (pe < 12) epsPerHtml += `<p class="text-[#1a73e8] font-medium mt-2">本益比低於 12 倍，股價可能被低估，或屬景氣循環股逢高獲利現象。</p>`;
                     else if (pe > 25) epsPerHtml += `<p class="text-[#d93025] font-medium mt-2">本益比高於 25 倍，市場對其期待極高，需留意股價過熱風險。</p>`;
@@ -922,8 +958,8 @@
                         { type: 'line', label: '20MA(月線)', data: ma20, borderColor: '#1e8e3e', borderWidth: 1.5, pointRadius: 0, tension: 0.1, order: 4, yAxisID: 'y' },
                         { type: 'line', label: '壓力線(近20日高)', data: high20, borderColor: '#d93025', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 5, yAxisID: 'y' },
                         { type: 'line', label: '支撐線(近20日低)', data: low20, borderColor: '#3c4043', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 6, yAxisID: 'y' },
-                        { type: 'line', label: '黃金交叉（買進訊號）', data: buySignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#d93025', pointBorderColor: '#d93025', rotation: 0, order: 1, yAxisID: 'y' },
-                        { type: 'line', label: '死亡交叉（賣出訊號）', data: sellSignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#1e8e3e', pointBorderColor: '#1e8e3e', rotation: 180, order: 0, yAxisID: 'y' }
+                        { type: 'line', label: '[黃金交叉（買進訊號）]', data: buySignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#d93025', pointBorderColor: '#d93025', rotation: 0, order: 1, yAxisID: 'y' },
+                        { type: 'line', label: '[死亡交叉（賣出訊號）]', data: sellSignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#1e8e3e', pointBorderColor: '#1e8e3e', rotation: 180, order: 0, yAxisID: 'y' }
                     ]
                 },
                 options: {
@@ -949,7 +985,7 @@
 
             let klineHtml = "";
             if (tLow > yHigh) klineHtml += "<li>向上跳空缺口：買盤強勢表態，籌碼積極。</li>";
-            if (tHigh < yLow) klineHtml += "<li>向下跳空缺口：賣壓沉重，盤勢偏弱。</li>";
+            if (tHigh < yLow) klineHtml += "<li>向下跳空缺口：賣壓沉重，盤勢偏向弱勢。</li>";
             
             const isRed = tClose > tOpen;
             const body = Math.abs(tClose - tOpen);
@@ -986,10 +1022,10 @@
             const volChangePct = ((currentVol - prevVol) / prevVol) * 100;
             const cMa20 = ma20[ma20.length - 1];
 
-            let pStatus = (Math.abs(changePct) <= 0.5) ? "價平" : (changePct > 0.5) ? "價漲" : "價跌";
+            let pStatus = (Math.abs(changePct) <= 1.5) ? "價平" : (changePct > 1.5) ? "價漲" : "價跌";
             let vStatus = "量平";
-            if (volChangePct > 5) vStatus = "量增";
-            else if (volChangePct < -5) {
+            if (volChangePct > 15) vStatus = "量增";
+            else if (volChangePct < -15) {
                 vStatus = (pStatus === "價跌" || pStatus === "價平") ? "量縮" : "量減";
             }
 
@@ -997,7 +1033,7 @@
             if (vpTag === "價平量縮") vpTag = "價平量減"; 
             if (vpTag === "價漲量縮") vpTag = "價漲量減";
 
-            let vpDesc = "將股價視為前進方向，成交量視為汽油。<br>";
+            let vpDesc = "";
             let trendPhase = "";
             const distFromMA20 = (tClose - cMa20) / cMa20;
 
@@ -1006,30 +1042,41 @@
             else if (distFromMA20 > 0.03 && distFromMA20 <= 0.15) trendPhase = "漲勢初期";
             else trendPhase = "整理期";
 
+            // 基礎量價定義
+            if (vpTag === "價漲量增") {
+                vpDesc += "<span class='font-bold text-[#d93025]'>多頭強勢</span>：買氣旺盛，願意花更高價買入，為健康的攻擊訊號。<br>";
+            } else if (vpTag === "價跌量增") {
+                vpDesc += "<span class='font-bold text-[#1e8e3e]'>恐慌出貨</span>：賣壓非常重，不計代價想逃跑，短期內股價壓力大。<br>";
+            } else if (vpTag === "價漲量減") {
+                vpDesc += "<span class='font-bold text-[#f9ab00]'>動力不足</span>：股價上漲缺乏追價買盤，小心可能是虛漲，面臨拉回風險。<br>";
+            } else if (vpTag === "價跌量減" || vpTag === "價跌量縮") {
+                vpDesc += "<span class='font-bold text-[#1a73e8]'>觀望縮手</span>：市場冷清，買賣雙方都在看戲，股價進入盤整或緩跌階段。<br>";
+            }
+
             if (trendPhase === "整理期") {
-                if (vpTag === "價平量平") { vpDesc += "大行情仍需時間醞釀，建議靜觀其變。"; }
-                else { vpDesc += "處於盤整階段，請等待明確突破訊號。"; }
+                if (vpTag === "價平量平") { vpDesc += "大行情仍需時間醞釀，建議靜待表態。"; }
+                else if (!vpDesc.includes("：")) { vpDesc += "盤整階段，請等待明確突破訊號。"; }
             } else if (trendPhase === "漲勢初期") {
                 if (vpTag === "價平量增") { vpDesc += "疑似主升段進場跡象，宜適度跟進。"; }
                 else if (vpTag === "價平量減") { vpDesc += "高點將現，請留意後續發展。"; }
-                else if (vpTag === "價漲量增") { vpDesc += "多頭強勢。代表買氣旺盛，大家願意花更高價買入，通常是健康的攻擊訊號。"; }
-                else if (vpTag === "價漲量減") { vpDesc += "動力不足。股價雖然在漲，但沒什麼人跟進，小心可能是「虛漲」，隨時會掉下來。"; }
-                else if (vpTag === "價漲量平") { vpDesc += "價量出現背離，漲勢不易持久。"; }
+                else if (vpTag === "價漲量增") { vpDesc += "漲勢明確，具備買進條件。"; }
+                else if (vpTag === "價漲量縮" || vpTag === "價漲量減") { vpDesc += "漲勢恐為曇花一現，仍待整理。"; }
+                else if (vpTag === "價漲量平") { vpDesc += "價量出現背離，漲勢難以持久。"; }
             } else if (trendPhase === "已漲了一段時間") {
-                if (vpTag === "價平量增") { vpDesc += "漲勢暫時受阻，判斷尚有高點可期。"; }
-                else if (vpTag === "價漲量增") { vpDesc += "如係近期巨量可能是主力出貨徵兆。"; }
-                else if (vpTag === "價漲量減") { vpDesc += "留意行情觸頂，極易面臨反轉。"; }
+                if (vpTag === "價平量增") { vpDesc += "漲勢暫時受阻，評估尚有高點可期。"; }
+                else if (vpTag === "價漲量增") { vpDesc += "若屬近期巨量，需防範主力出貨徵兆。"; }
+                else if (vpTag === "價漲量縮" || vpTag === "價漲量減") { vpDesc += "留意行情觸頂，三日內易生反轉。"; }
                 else if (vpTag === "價漲量平") { vpDesc += "行情未見反轉，應持續觀察買氣力道。"; }
             } else if (trendPhase === "跌勢中") {
                 if (vpTag === "價平量增") { vpDesc += "已見止跌回升特徵，可嘗試分批切入。"; }
-                else if (vpTag === "價平量減" || vpTag === "價平量縮") { vpDesc += "量縮打底，未來補量將有利成底。"; vpTag = "價平量減"; }
+                else if (vpTag === "價平量減" || vpTag === "價平量縮") { vpDesc += "量縮打底，未來補量有利成底。"; }
                 else if (vpTag === "價跌量平") { vpDesc += "若剛起跌不宜介入；若深跌可視為初次探底。"; }
-                else if (vpTag === "價跌量縮" || vpTag === "價跌量減") { vpDesc += "觀望縮手。代表市場冷清，買賣雙方都在看戲，股價進入盤整或緩跌階段。"; vpTag = "價跌量縮"; }
-                else if (vpTag === "價跌量增") { vpDesc += "恐慌出貨。代表賣壓非常重，大家不計代價想逃跑，短期內股價壓力大。"; }
+                else if (vpTag === "價跌量縮" || vpTag === "價跌量減") { vpDesc += "若剛起跌表示跌勢持續；若深跌且極度量縮表示底部將現。"; }
+                else if (vpTag === "價跌量增") { vpDesc += "長期沉寂標的疑為進貨；若在高檔跌破則跌勢成形後市保守。"; }
             }
 
-            if (vpDesc === "將股價視為前進方向，成交量視為汽油。<br>") {
-                vpDesc += "量價無明顯極端徵兆，維持原趨勢判斷。";
+            if (!vpDesc) {
+                vpDesc = "量價無明顯異常徵兆，維持原趨勢判斷。";
             }
 
             // 完全聯動矩陣狀態
@@ -1113,14 +1160,14 @@
             let eBadgeText = "", eBadgeClass = "";
 
             if (tClose > cMa20 && ma20Up) {
-                if (hAdv) hAdv.innerText = "股價在 20MA 月線之上，趨勢偏多。均線方向往上具備支撐力，建議持股續抱。若 5MA 亦在上方，代表近期買氣正強。";
+                if (hAdv) hAdv.innerText = "股價在 20MA 月線之上，趨勢偏多。均線方向往上具備支撐力，建議持股續抱。若 5MA 亦在上方，代表近期買氣強勁。";
                 hBadgeText = "續抱"; hBadgeClass = "bg-[#1e8e3e] text-white border-[#1e8e3e]";
-                if (eAdv) eAdv.innerText = "均線呈現多頭排列，逢回測支撐未破為良好切入時機。帶量黃金交叉出現時為更佳的買進點，乖離過大忌盲目追高。";
+                if (eAdv) eAdv.innerText = "短天期均線呈現多頭排列，逢回測支撐未破為良好切入時機。帶量黃金交叉出現時為買進點，乖離過大忌盲目追高。";
                 eBadgeText = "買入"; eBadgeClass = "bg-[#1a73e8] text-white border-[#1a73e8]";
             } else if (tClose < cMa20 && !ma20Up) {
-                if (hAdv) hAdv.innerText = "股價跌破月線且均線向下，賣壓沉重。持有者宜設定停損點，確實斷尾保留資金實力。";
+                if (hAdv) hAdv.innerText = "股價跌破月線且均線向下，賣壓沉重。近期買入者皆處於虧損狀態，持有者宜設定停損點，確實斷尾保留資金實力。";
                 hBadgeText = "賣出"; hBadgeClass = "bg-[#d93025] text-white border-[#d93025]";
-                if (eAdv) eAdv.innerText = "大方向看空，避免貿然承接。請耐心等待均線走平或爆量止跌訊號，維持空手觀望。";
+                if (eAdv) eAdv.innerText = "大方向看空，如同下坡溜滑梯壓力極大，避免貿然伸手承接。請耐心等待均線走平或爆量止跌訊號，維持空手觀望。";
                 eBadgeText = "觀望"; eBadgeClass = "bg-[#f8f9fa] text-[#5f6368] border-[#dadce0]";
             } else {
                 if (hAdv) hAdv.innerText = "股價上下震盪，均線呈現糾結。此時短線訊號易受洗盤干擾，請以區間高低點作為防守。";
@@ -1283,8 +1330,8 @@
                 statusRange = `大於等於 ${p170}`;
                 judgement = "【末升段收割區】已達超越極限，屬於危險區域。";
                 ['cost','104','120','140','170'].forEach(id => {
-                    const dotEl = document.getElementById(`dot-${id}`);
-                    if(dotEl) dotEl.classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                    const dot = document.getElementById(`dot-${id}`);
+                    if(dot) dot.classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
                 });
             }
 
@@ -1297,26 +1344,7 @@
 
             if (!globalHistoricalData.close || globalHistoricalData.close.length === 0) {
                 const trendForMatrix = currentPrice >= costPrice ? 'expansion' : 'contraction';
-                const posForMatrix = currentPrice >= costPrice ? 'high' : 'low';
-                
-                const trendEl = document.getElementById('matrixTrend');
-                const volEl = document.getElementById('matrixVolume');
-                const posEl = document.getElementById('matrixPosition');
-                if (trendEl && volEl && posEl) {
-                    trendEl.value = trendForMatrix;
-                    volEl.value = 'shrink';
-                    posEl.value = posForMatrix;
-                }
-                
-                document.querySelectorAll('.matrix-cell').forEach(el => {
-                    el.className = 'matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-2 border border-transparent transition-all';
-                });
-                
-                let targetId = `cell-${trendForMatrix === 'contraction' ? 'con' : 'exp'}-shrink-${posForMatrix}`;
-                const targetEl = document.getElementById(targetId);
-                if (targetEl) {
-                    targetEl.className = `matrix-cell ${posForMatrix === 'high' ? 'bg-[#f9ab00]' : 'bg-[#1a73e8]'} text-white rounded-md flex flex-col items-center justify-center p-2 shadow-md transform scale-105 transition-all z-10 font-bold border-2 border-[#202124]`;
-                }
+                updateMatrixUI(trendForMatrix, 'shrink', currentPrice >= costPrice ? 'high' : 'low');
             }
 
             updateSummaryTable(currentPrice, costPrice);
