@@ -105,9 +105,9 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-[#5f6368] mb-2">查詢標的 (名稱與代號)</label>
+                            <label class="block text-xs font-medium text-[#5f6368] mb-2">查詢標的 (僅限數字代號)</label>
                             <div class="flex space-x-2">
-                                <input type="text" id="stockInput" placeholder="輸入代號或名稱，例如：2330 或是 台積電" 
+                                <input type="text" id="stockInput" placeholder="輸入數字代號，例如：2330" 
                                     class="flex-1 px-4 py-2 border border-[#dadce0] rounded-md focus:ring-1 focus:ring-[#1a73e8] focus:border-[#1a73e8] outline-none transition text-[15px] bg-[#f8f9fa]">
                                 <button onclick="searchStock()" id="searchBtn" class="bg-[#1a73e8] hover:bg-[#1558d6] text-white font-medium py-2 px-6 rounded-md transition whitespace-nowrap">
                                     查詢
@@ -180,7 +180,7 @@
                             </div>
                         </div>
 
-                        <!-- 基本面、K線與量價關係 -->
+                        <!-- 基礎指標診斷區塊 -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="border border-[#dadce0] rounded-md p-4 bg-[#f8f9fa]">
                                 <h4 class="text-sm font-medium text-[#202124] mb-2 border-l-4 border-[#137333] pl-2">基本面 (EPS/本益比)</h4>
@@ -305,7 +305,7 @@
                                 </table>
                             </div>
                             <div class="text-[11px] text-[#5f6368] mt-3 leading-relaxed bg-[#f8f9fa] p-3 rounded-md border border-[#dadce0]">
-                                註：建議停損價預設以當前收盤價之下跌 7% 作為防守基準。保守型可設 5-10%；積極型可設 15-20%。
+                                註：建議停損價預設以當前收盤價之下跌 7% 作為防守基準。保守型投資人可設 5-10%；積極型投資人可設 15-20%。
                             </div>
                         </div>
                     </div>
@@ -681,7 +681,36 @@
             });
         }
 
-        // 終極防阻擋機制：20 條高併發代理輪詢引擎 (Promise.any)
+        // FinMind EPS 與 PE 資料抓取
+        async function fetchFinMindBasicData(code, currentPrice) {
+            try {
+                const sd = new Date(); sd.setDate(sd.getDate() - 14);
+                const sYMD = sd.toISOString().split('T')[0];
+                const eYMD = new Date().toISOString().split('T')[0];
+                const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPER&data_id=${code}&start_date=${sYMD}&end_date=${eYMD}`;
+                
+                // 共用高併發代理
+                const res = await fetchWithProxyRace(fmUrl);
+                
+                let pe = null;
+                let eps = null;
+
+                if (res.status === 200 && res.data && res.data.data && res.data.data.length > 0) {
+                    const latestData = res.data.data[res.data.data.length - 1];
+                    pe = latestData.PER;
+                    if (pe > 0) {
+                        eps = currentPrice / pe;
+                    } else {
+                        eps = -1; // 虧損狀態，本益比為0
+                    }
+                }
+                return { pe, eps };
+            } catch (e) {
+                return { pe: null, eps: null };
+            }
+        }
+
+        // 終極防阻擋機制：30 條高併發代理輪詢引擎 (Promise.any)
         async function fetchWithProxyRace(targetUrl) {
             const cacheBuster = targetUrl.includes('?') ? `&_t=${Date.now()}` : `?_t=${Date.now()}`;
             const encodeUrl = encodeURIComponent(targetUrl + cacheBuster);
@@ -700,7 +729,7 @@
 
             const promises = [];
             
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 30; i++) {
                 const proxyFn = baseProxies[i % baseProxies.length];
                 const cb = `&_rnd=${Math.random().toString(36).substring(2)}${Date.now()}${i}`;
                 const dynRawUrl = targetUrl + cb;
@@ -736,6 +765,8 @@
                         if (data?.chart?.error?.code === 'Not Found' || data?.quoteResponse?.error) return resolve({ status: 404 });
                         if (data?.quoteResponse?.result) return resolve({ status: 200, data: data }); 
                         if (data?.chart?.result?.length > 0) return resolve({ status: 200, data: data });
+                        // 支援 FinMind 的資料格式
+                        if (data?.msg === 'success' && data?.data) return resolve({ status: 200, data: data });
 
                         reject(new Error('Invalid structure'));
                     } catch (err) {
@@ -776,7 +807,6 @@
 
             let symbolsToTry = codeInput.includes('.') ? [codeInput] : [`${codeInput}.TW`, `${codeInput}.TWO`];
             let found = false;
-            let finalEps = null, finalPe = null;
 
             const endpoints = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
 
@@ -786,7 +816,7 @@
                         const url = `https://${endpoint}/v8/finance/chart/${sym}?interval=1d&range=1y`; 
                         const result = await fetchWithProxyRace(url);
                         
-                        if (result.status === 404) break; 
+                        if (result.status === 404) continue; 
                         
                         if (result.status === 200 && result.data) {
                             const parsedData = result.data;
@@ -802,14 +832,8 @@
                             showMessage(`載入成功：${name} (${price})`);
                             found = true;
 
-                            try {
-                                const quoteUrl = `https://${endpoint}/v7/finance/quote?symbols=${sym}`;
-                                const quoteRes = await fetchWithProxyRace(quoteUrl);
-                                if (quoteRes.status === 200 && quoteRes.data?.quoteResponse?.result?.length > 0) {
-                                    finalEps = quoteRes.data.quoteResponse.result[0].epsTrailingTwelveMonths || null;
-                                    finalPe = quoteRes.data.quoteResponse.result[0].trailingPE || null;
-                                }
-                            } catch(e) { console.log("Quote fetch skip"); }
+                            // 抓取基本面資料
+                            const basicData = await fetchFinMindBasicData(codeInput, price);
 
                             if (parsedData.chart.result[0].timestamp && parsedData.chart.result[0].indicators.quote[0]) {
                                 const timestamps = parsedData.chart.result[0].timestamp;
@@ -860,8 +884,8 @@
                                     ma60: last60Ma60,
                                     high20: high20Arr,
                                     low20: low20Arr,
-                                    eps: finalEps,
-                                    pe: finalPe
+                                    eps: basicData.eps,
+                                    pe: basicData.pe
                                 };
                                 
                                 renderChartAndAnalysis();
@@ -895,10 +919,10 @@
             
             let epsPerHtml = "";
             if (eps !== null && pe !== null) {
-                epsPerHtml += `<p class="mb-1"><span class="font-medium text-[#202124]">EPS (每股盈餘):</span> ${eps.toFixed(2)} 元。公司為股東賺取的金額。</p>`;
-                epsPerHtml += `<p class="mb-1"><span class="font-medium text-[#202124]">本益比 (PER):</span> ${pe.toFixed(2)} 倍。回本所需年數。</p>`;
+                epsPerHtml += `<p class="mb-1"><span class="font-medium text-[#202124]">EPS (每股盈餘):</span> ${eps > 0 ? eps.toFixed(2) : "虧損"} 元。公司為股東賺取的金額。</p>`;
+                epsPerHtml += `<p class="mb-1"><span class="font-medium text-[#202124]">本益比 (PER):</span> ${pe > 0 ? pe.toFixed(2) : "--"} 倍。回本所需年數。</p>`;
                 
-                if (eps < 0) {
+                if (eps < 0 || pe === 0) {
                     epsPerHtml += `<p class="text-[#d93025] font-medium mt-2">公司目前處於虧損狀態，本益比失去參考價值，新手建議避開或謹慎評估。</p>`;
                 } else {
                     if (pe < 12) epsPerHtml += `<p class="text-[#1a73e8] font-medium mt-2">本益比低於 12 倍，股價可能被低估，或屬景氣循環股逢高獲利現象。</p>`;
@@ -909,6 +933,73 @@
                 epsPerHtml = "無基本面資料可供分析。";
             }
             epsAnalysisEl.innerHTML = epsPerHtml;
+        }
+
+        function updateMatrixUI(trend, vol, pos) {
+            const trendEl = document.getElementById('matrixTrend');
+            const volEl = document.getElementById('matrixVolume');
+            const posEl = document.getElementById('matrixPosition');
+            if (trendEl && volEl && posEl) {
+                trendEl.value = trend;
+                volEl.value = vol;
+                posEl.value = pos;
+            }
+
+            document.querySelectorAll('.matrix-cell').forEach(el => {
+                el.className = 'matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-2 border border-transparent transition-all';
+            });
+
+            let targetId = `cell-${trend === 'contraction' ? 'con' : 'exp'}-${vol}-${pos}`;
+            const targetEl = document.getElementById(targetId);
+
+            const cardTitle = document.getElementById('autoResultTitle');
+            const cardDesc = document.getElementById('autoResultDesc');
+            const cardBadge = document.getElementById('autoResultBadge');
+            
+            if (!cardTitle || !cardDesc || !cardBadge) return;
+
+            let title = "", badgeText = "";
+            let activeColor = "bg-[#f1f3f4]", activeText = "text-white";
+
+            if (trend === 'contraction') {
+                badgeText = '逆勢操作';
+                if (vol === 'shrink' && pos === 'high') {
+                    title = '快速賣出'; activeColor = 'bg-[#d93025]';
+                } else if (vol === 'expand' && pos === 'high') {
+                    title = '準備賣出'; activeColor = 'bg-[#f9ab00]';
+                } else if (vol === 'shrink' && pos === 'low') {
+                    title = '準備買入'; activeColor = 'bg-[#1a73e8]';
+                } else if (vol === 'expand' && pos === 'low') {
+                    title = '快速買入'; activeColor = 'bg-[#1e8e3e]';
+                }
+            } else {
+                badgeText = '順勢操作';
+                if (vol === 'shrink' && pos === 'high') {
+                    title = '準備賣出'; activeColor = 'bg-[#f9ab00]';
+                } else if (vol === 'expand' && pos === 'high') {
+                    title = '繼續加碼'; activeColor = 'bg-[#1e8e3e]';
+                } else if (vol === 'shrink' && pos === 'low') {
+                    title = '繼續加空'; activeColor = 'bg-[#d93025]';
+                } else if (vol === 'expand' && pos === 'low') {
+                    title = '準備買入'; activeColor = 'bg-[#1a73e8]';
+                }
+            }
+
+            if(targetEl) {
+                targetEl.className = `matrix-cell ${activeColor} ${activeText} rounded-md flex flex-col items-center justify-center p-2 shadow-md transform scale-105 transition-all z-10 font-bold border-2 border-[#202124]`;
+            }
+
+            cardTitle.innerText = title;
+            cardBadge.innerText = badgeText;
+        }
+
+        function updateMatrix() {
+            const trendEl = document.getElementById('matrixTrend');
+            const volEl = document.getElementById('matrixVolume');
+            const posEl = document.getElementById('matrixPosition');
+            if(trendEl && volEl && posEl) {
+                updateMatrixUI(trendEl.value, volEl.value, posEl.value);
+            }
         }
 
         function renderChartAndAnalysis() {
@@ -998,16 +1089,24 @@
                 kType = "一字線"; kDesc = "多空陷入僵持狀態。";
             } else if (isRed) {
                 if (upper < total * 0.05 && lower < total * 0.05) { kType = "大紅棒"; kDesc = "買方完全壓制賣方，強烈攻擊訊號。紅漲綠跌，買盤氣勢強。"; }
-                else if (upper >= body * 2 && lower <= body) { kType = "上影線紅K"; kDesc = "股價曾試圖衝高，被賣壓壓回，上方壓力重。"; }
-                else if (lower >= body * 2 && upper <= body) { kType = "下影線紅K"; kDesc = "股價下殺後遇買盤支撐，下方防守明確。"; }
-                else if (body < total * 0.1) { kType = "十字星"; kDesc = "多空雙方打成平手，正處於觀望狀態，研判即將變盤。"; }
-                else { kType = "紅K線"; kDesc = "收盤價大於開盤價。買方勝出，氣勢偏多。"; }
+                else if (upper < total * 0.05) { kType = "光頭陽線"; kDesc = "先跌後漲，買方力道強勁。"; }
+                else if (lower < total * 0.05) { kType = "光腳陽線"; kDesc = "買方強勢，實體越長漲勢越穩。"; }
+                else if (lower >= body * 2 && upper <= body) { kType = "陽線錘子"; kDesc = "反轉特徵，下檔具備支撐。"; }
+                else if (upper >= body * 2 && lower <= body) { kType = "陽線倒錘子"; kDesc = "視位階判斷，留意高檔遇壓。"; }
+                else if (body > total * 0.5) { kType = "大陽線"; kDesc = "強勢上漲，買氣踴躍。"; }
+                else if (upper > body && upper > lower) { kType = "上影線較長小陽線"; kDesc = "多方上攻受挫。"; }
+                else if (lower > body && lower > upper) { kType = "下影線較長小陽線"; kDesc = "洗盤後多方勝出。"; }
+                else { kType = "小陽線"; kDesc = "高檔出現需防買盤力竭。"; }
             } else {
                 if (upper < total * 0.05 && lower < total * 0.05) { kType = "大長黑"; kDesc = "賣方完全壓制買方，強烈下跌訊號。賣盤沉重需防避。"; }
-                else if (upper >= body * 2 && lower <= body) { kType = "上影線黑K"; kDesc = "上攻無力，賣壓沉重，上方具備強大壓力。"; }
-                else if (lower >= body * 2 && upper <= body) { kType = "下影線黑K"; kDesc = "跌深反彈，下方具有支撐力量。"; }
-                else if (body < total * 0.1) { kType = "十字星"; kDesc = "多空雙方陷入平手觀望，即將面臨方向表態。"; }
-                else { kType = "黑K線"; kDesc = "收盤價小於開盤價。賣方勝出，走勢偏弱。"; }
+                else if (upper < total * 0.05) { kType = "光頭陰線"; kDesc = "高檔區出現代表潛在回檔。"; }
+                else if (lower < total * 0.05) { kType = "光腳陰線"; kDesc = "空方強勢，跌勢強勁。"; }
+                else if (lower >= body * 2 && upper <= body) { kType = "陰線錘子"; kDesc = "高檔為空方訊號，低檔為多方訊號。"; }
+                else if (upper >= body * 2 && lower <= body) { kType = "陰線倒錘子"; kDesc = "空頭凝聚，多方力道減弱。"; }
+                else if (body > total * 0.5) { kType = "大陰線"; kDesc = "強勢下跌格局。"; }
+                else if (upper > body && upper > lower) { kType = "上影線較長小陰線"; kDesc = "空方主導盤勢。"; }
+                else if (lower > body && lower > upper) { kType = "下影線較長小陰線"; kDesc = "多頭偏弱表現。"; }
+                else { kType = "小陰線"; kDesc = "多空不明確，空方稍占優勢。"; }
             }
 
             klineHtml += `<li>${kType}：${kDesc}</li>`;
@@ -1109,35 +1208,10 @@
             }
             if(volPriceDesc) volPriceDesc.innerHTML = vpDesc;
 
-            // 觸發決策矩陣 UI 變更 (防呆機制)
-            const trendEl = document.getElementById('matrixTrend');
-            const volEl = document.getElementById('matrixVolume');
-            const posEl = document.getElementById('matrixPosition');
-            if (trendEl && volEl && posEl) {
-                trendEl.value = trendForMatrix;
-                volEl.value = volState;
-                posEl.value = pos;
-            }
-
-            document.querySelectorAll('.matrix-cell').forEach(el => {
-                el.className = 'matrix-cell bg-[#f1f3f4] text-[#9aa0a6] rounded-md flex flex-col items-center justify-center p-2 border border-transparent transition-all';
-            });
-
-            let targetId = `cell-${trendForMatrix === 'contraction' ? 'con' : 'exp'}-${volState}-${pos}`;
-            const targetEl = document.getElementById(targetId);
-            const cardTitle = document.getElementById('autoResultTitle');
+            // 更新矩陣 UI 並同步描述
+            updateMatrixUI(trendForMatrix, volState, pos);
             const cardDesc = document.getElementById('autoResultDesc');
-            const cardBadge = document.getElementById('autoResultBadge');
-
-            if (targetEl) {
-                targetEl.className = `matrix-cell ${tagColor.split(' ')[0]} text-white rounded-md flex flex-col items-center justify-center p-2 shadow-md transform scale-105 transition-all z-10 font-bold border-2 border-[#202124]`;
-            }
-            
-            if (cardTitle && cardDesc && cardBadge) {
-                cardTitle.innerText = action;
-                cardDesc.innerText = vpDesc.replace(/<[^>]*>?/gm, ''); // 移除 HTML 標籤
-                cardBadge.innerText = trendForMatrix === 'contraction' ? '逆勢操作' : '順勢操作';
-            }
+            if (cardDesc) cardDesc.innerText = vpDesc.replace(/<[^>]*>?/gm, '');
 
             // 操盤手視角及亮燈標籤 (結合均線方向判斷)
             const cMa5 = ma5[ma5.length - 1];
