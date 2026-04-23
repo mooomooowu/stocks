@@ -155,7 +155,7 @@
                     <div id="chartSection" class="hidden google-card p-5 md:p-6">
                         <div class="flex items-center justify-between mb-4 border-b border-[#dadce0] pb-3">
                             <h3 class="text-[16px] font-medium text-[#202124]">近期走勢圖與支撐壓力</h3>
-                            <span class="text-xs font-mono text-[#5f6368] bg-[#f1f3f4] px-2 py-1 rounded">近 60 日技術面</span>
+                            <span class="text-xs font-mono text-[#5f6368] bg-[#f1f3f4] px-2 py-1 rounded">近 60 日技術面含外資動向</span>
                         </div>
                         
                         <div class="w-full h-[320px] bg-white border border-[#dadce0] rounded-md p-2 mb-6">
@@ -649,7 +649,7 @@
     </div>
 
     <script>
-        let globalHistoricalData = { date: [], open: [], high: [], low: [], close: [], volume: [], ma5: [], ma20: [], ma60: [], eps: null, pe: null };
+        let globalHistoricalData = { date: [], open: [], high: [], low: [], close: [], volume: [], inst: [], ma5: [], ma20: [], ma60: [], eps: null, pe: null };
         let queryCodeInfo = { code: "--", name: "--" };
 
         function switchTab(tabId) {
@@ -681,50 +681,18 @@
             });
         }
 
-        // FinMind EPS 與 PE 資料抓取
-        async function fetchFinMindBasicData(code, currentPrice) {
-            try {
-                const sd = new Date(); sd.setDate(sd.getDate() - 14);
-                const sYMD = sd.toISOString().split('T')[0];
-                const eYMD = new Date().toISOString().split('T')[0];
-                const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPER&data_id=${code}&start_date=${sYMD}&end_date=${eYMD}`;
-                
-                // 共用高併發代理
-                const res = await fetchWithProxyRace(fmUrl);
-                
-                let pe = null;
-                let eps = null;
-
-                if (res.status === 200 && res.data && res.data.data && res.data.data.length > 0) {
-                    const latestData = res.data.data[res.data.data.length - 1];
-                    pe = latestData.PER;
-                    if (pe > 0) {
-                        eps = currentPrice / pe;
-                    } else {
-                        eps = -1; // 虧損狀態，本益比為0
-                    }
-                }
-                return { pe, eps };
-            } catch (e) {
-                return { pe: null, eps: null };
-            }
-        }
-
-        // 終極防阻擋機制：30 條高併發代理輪詢引擎 (Promise.any)
+        // 30 條高併發代理防阻擋引擎
         async function fetchWithProxyRace(targetUrl) {
-            const cacheBuster = targetUrl.includes('?') ? `&_t=${Date.now()}` : `?_t=${Date.now()}`;
-            const encodeUrl = encodeURIComponent(targetUrl + cacheBuster);
-            const rawUrl = targetUrl + cacheBuster;
-            
             const baseProxies = [
-                (u, eu) => `https://api.allorigins.win/get?url=${eu}`,
-                (u, eu) => `https://api.codetabs.com/v1/proxy?quest=${eu}`,
-                (u, eu) => `https://corsproxy.io/?url=${eu}`,
-                (u, eu) => `https://api.allorigins.win/raw?url=${eu}`,
-                (u, eu) => `https://thingproxy.freeboard.io/fetch/${u}`,
-                (u, eu) => `https://api.cors.lol/?url=${eu}`,
-                (u, eu) => `https://corsproxy.org/?${eu}`,
-                (u, eu) => `https://cors-proxy.htmldriven.com/?url=${eu}`
+                (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+                (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+                (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+                (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
+                (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+                (u) => `https://proxy.cors.sh/${u}`,
+                (u) => `https://api.cors.lol/?url=${encodeURIComponent(u)}`,
+                (u) => `https://corsproxy.org/?${encodeURIComponent(u)}`,
+                (u) => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(u)}`
             ];
 
             const promises = [];
@@ -733,8 +701,7 @@
                 const proxyFn = baseProxies[i % baseProxies.length];
                 const cb = `&_rnd=${Math.random().toString(36).substring(2)}${Date.now()}${i}`;
                 const dynRawUrl = targetUrl + cb;
-                const dynEncUrl = encodeURIComponent(dynRawUrl);
-                const pUrl = proxyFn(dynRawUrl, dynEncUrl);
+                const pUrl = proxyFn(dynRawUrl);
                 const isAllOriginsGet = pUrl.includes('/get?url=');
 
                 promises.push(new Promise(async (resolve, reject) => {
@@ -765,8 +732,7 @@
                         if (data?.chart?.error?.code === 'Not Found' || data?.quoteResponse?.error) return resolve({ status: 404 });
                         if (data?.quoteResponse?.result) return resolve({ status: 200, data: data }); 
                         if (data?.chart?.result?.length > 0) return resolve({ status: 200, data: data });
-                        // 支援 FinMind 的資料格式
-                        if (data?.msg === 'success' && data?.data) return resolve({ status: 200, data: data });
+                        if (data?.msg === 'success' && Array.isArray(data?.data)) return resolve({ status: 200, data: data });
 
                         reject(new Error('Invalid structure'));
                     } catch (err) {
@@ -780,6 +746,36 @@
                 return await Promise.any(promises); 
             } catch (e) {
                 return { status: 'error' };
+            }
+        }
+
+        // 專屬 FinMind API 抓取 EPS 與 PE (解決 API 不穩問題)
+        async function fetchFinMindBasicData(code, currentPrice) {
+            try {
+                const sd = new Date(); sd.setDate(sd.getDate() - 14);
+                const sYMD = sd.toISOString().split('T')[0];
+                const eYMD = new Date().toISOString().split('T')[0];
+                const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPER&data_id=${code}&start_date=${sYMD}&end_date=${eYMD}`;
+                
+                let res = await fetch(fmUrl).catch(() => null);
+                let data = res ? await res.json().catch(() => null) : null;
+
+                if (!data || data.msg !== 'success') {
+                    const proxyRes = await fetchWithProxyRace(fmUrl);
+                    if (proxyRes.status === 200) data = proxyRes.data;
+                }
+
+                if (data && data.msg === 'success' && data.data && data.data.length > 0) {
+                    const latestData = data.data[data.data.length - 1];
+                    let pe = parseFloat(latestData.PER);
+                    if (isNaN(pe) || pe <= 0) {
+                        return { pe: 0, eps: -1 }; 
+                    }
+                    return { pe: pe, eps: currentPrice / pe };
+                }
+                return { pe: null, eps: null };
+            } catch (e) {
+                return { pe: null, eps: null };
             }
         }
 
@@ -805,99 +801,105 @@
                 return;
             }
 
-            let symbolsToTry = codeInput.includes('.') ? [codeInput] : [`${codeInput}.TW`, `${codeInput}.TWO`];
             let found = false;
 
-            const endpoints = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
-
-            for (let sym of symbolsToTry) {
-                for (let endpoint of endpoints) {
-                    try {
-                        const url = `https://${endpoint}/v8/finance/chart/${sym}?interval=1d&range=1y`; 
-                        const result = await fetchWithProxyRace(url);
-                        
-                        if (result.status === 404) continue; 
-                        
-                        if (result.status === 200 && result.data) {
-                            const parsedData = result.data;
-                            const price = parsedData.chart.result[0].meta.regularMarketPrice;
-                            let name = parsedData.chart.result[0].meta.symbol;
-                            if(parsedData.chart.result[0].meta.shortName) name = parsedData.chart.result[0].meta.shortName;
-
-                            document.getElementById('stockInput').value = `${name} (${codeInput})`;
-                            document.getElementById('currentPrice').value = price;
-                            queryCodeInfo.code = codeInput;
-                            queryCodeInfo.name = name;
-                            
-                            showMessage(`載入成功：${name} (${price})`);
-                            found = true;
-
-                            // 抓取基本面資料
-                            const basicData = await fetchFinMindBasicData(codeInput, price);
-
-                            if (parsedData.chart.result[0].timestamp && parsedData.chart.result[0].indicators.quote[0]) {
-                                const timestamps = parsedData.chart.result[0].timestamp;
-                                const quotes = parsedData.chart.result[0].indicators.quote[0];
-                                const validData = [];
-                                for(let i = 0; i < timestamps.length; i++) {
-                                    if (quotes.close[i] !== null && quotes.volume[i] !== null) {
-                                        validData.push({ 
-                                            date: new Date(timestamps[i] * 1000).toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'}),
-                                            open: quotes.open[i],
-                                            high: quotes.high[i],
-                                            low: quotes.low[i],
-                                            close: quotes.close[i], 
-                                            volume: quotes.volume[i] 
-                                        });
-                                    }
-                                }
-                                
-                                const fullCloses = validData.map(d => d.close);
-                                const ma5Full = getMA(fullCloses, 5);
-                                const ma20Full = getMA(fullCloses, 20);
-                                const ma60Full = getMA(fullCloses, 60);
-
-                                const last60 = validData.slice(-60);
-                                const last60Ma5 = ma5Full.slice(-60);
-                                const last60Ma20 = ma20Full.slice(-60);
-                                const last60Ma60 = ma60Full.slice(-60);
-                                
-                                const high20Arr = [];
-                                const low20Arr = [];
-                                for(let i = 0; i < last60.length; i++) {
-                                    const endIdx = validData.length - 60 + i;
-                                    const startIdx = Math.max(0, endIdx - 19);
-                                    const windowData = validData.slice(startIdx, endIdx + 1);
-                                    high20Arr.push(Math.max(...windowData.map(d => d.high)));
-                                    low20Arr.push(Math.min(...windowData.map(d => d.low)));
-                                }
-
-                                globalHistoricalData = {
-                                    date: last60.map(d => d.date),
-                                    open: last60.map(d => d.open),
-                                    high: last60.map(d => d.high),
-                                    low: last60.map(d => d.low),
-                                    close: last60.map(d => d.close),
-                                    volume: last60.map(d => d.volume),
-                                    ma5: last60Ma5,
-                                    ma20: last60Ma20,
-                                    ma60: last60Ma60,
-                                    high20: high20Arr,
-                                    low20: low20Arr,
-                                    eps: basicData.eps,
-                                    pe: basicData.pe
-                                };
-                                
-                                renderChartAndAnalysis();
-                                updateSummaryTable(price, parseFloat(document.getElementById('costPrice').value));
-                            }
-                            break;
-                        }
-                    } catch (e) {
-                        console.log("Fetch iteration error");
+            try {
+                // 優先使用 FinMind 抓取 K 線以保持資料格式的一致與正確性
+                const sd = new Date();
+                sd.setDate(sd.getDate() - 150);
+                const sYMD = sd.toISOString().split('T')[0];
+                const eYMD = new Date().toISOString().split('T')[0];
+                
+                const targetUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${codeInput}&start_date=${sYMD}&end_date=${eYMD}`;
+                
+                let result = { status: 'error' };
+                try {
+                    let res = await fetch(targetUrl);
+                    if(res.ok) {
+                        let j = await res.json();
+                        if(j.msg === 'success' && j.data && j.data.length > 0) result = { status: 200, data: j };
                     }
+                } catch(e) {}
+                
+                if (result.status !== 200) {
+                     result = await fetchWithProxyRace(targetUrl);
                 }
-                if (found) break;
+
+                if (result.status === 200 && result.data && result.data.data && result.data.data.length > 0) {
+                    const stockData = result.data.data;
+                    const latestDay = stockData[stockData.length - 1];
+                    const price = latestDay.close;
+                    
+                    let name = codeInput;
+                    try {
+                        const nameUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${codeInput}&quotesCount=1`;
+                        const nameRes = await fetchWithProxyRace(nameUrl);
+                        if (nameRes.status === 200 && nameRes.data?.quotes?.length > 0) {
+                            name = nameRes.data.quotes[0].shortName || nameRes.data.quotes[0].longName || codeInput;
+                        }
+                    } catch (e) { }
+
+                    document.getElementById('stockInput').value = `${name} (${codeInput})`;
+                    document.getElementById('currentPrice').value = price;
+                    queryCodeInfo.code = codeInput;
+                    queryCodeInfo.name = name;
+                    
+                    showMessage(`載入成功：${name} (${price})`);
+                    found = true;
+
+                    const basicData = await fetchFinMindBasicData(codeInput, price);
+
+                    const validData = stockData.map(item => ({
+                        date: item.date.substring(5).replace('-', '/'),
+                        open: item.open,
+                        high: item.max,
+                        low: item.min,
+                        close: item.close,
+                        volume: item.Trading_Volume / 1000 
+                    }));
+                    
+                    const fullCloses = validData.map(d => d.close);
+                    const ma5Full = getMA(fullCloses, 5);
+                    const ma20Full = getMA(fullCloses, 20);
+                    const ma60Full = getMA(fullCloses, 60);
+
+                    const last60 = validData.slice(-60);
+                    const last60Ma5 = ma5Full.slice(-60);
+                    const last60Ma20 = ma20Full.slice(-60);
+                    const last60Ma60 = ma60Full.slice(-60);
+                    
+                    const high20Arr = [];
+                    const low20Arr = [];
+                    for(let i = 0; i < last60.length; i++) {
+                        const endIdx = validData.length - 60 + i;
+                        const startIdx = Math.max(0, endIdx - 19);
+                        const windowData = validData.slice(startIdx, endIdx + 1);
+                        high20Arr.push(Math.max(...windowData.map(d => d.high)));
+                        low20Arr.push(Math.min(...windowData.map(d => d.low)));
+                    }
+
+                    globalHistoricalData = {
+                        date: last60.map(d => d.date),
+                        open: last60.map(d => d.open),
+                        high: last60.map(d => d.high),
+                        low: last60.map(d => d.low),
+                        close: last60.map(d => d.close),
+                        volume: last60.map(d => d.volume),
+                        ma5: last60Ma5,
+                        ma20: last60Ma20,
+                        ma60: last60Ma60,
+                        high20: high20Arr,
+                        low20: low20Arr,
+                        eps: basicData.eps,
+                        pe: basicData.pe,
+                        inst: [] 
+                    };
+                    
+                    renderChartAndAnalysis();
+                    updateSummaryTable(price, parseFloat(document.getElementById('costPrice').value || 0));
+                }
+            } catch (e) {
+                console.log("Fetch error");
             }
 
             if (!found) {
@@ -923,10 +925,10 @@
                 epsPerHtml += `<p class="mb-1"><span class="font-medium text-[#202124]">本益比 (PER):</span> ${pe > 0 ? pe.toFixed(2) : "--"} 倍。回本所需年數。</p>`;
                 
                 if (eps < 0 || pe === 0) {
-                    epsPerHtml += `<p class="text-[#d93025] font-medium mt-2">公司目前處於虧損狀態，本益比失去參考價值，新手建議避開或謹慎評估。</p>`;
+                    epsPerHtml += `<p class="text-[#d93025] font-medium mt-2">公司目前處於虧損狀態，本益比失去參考價值，建議避開或謹慎評估。</p>`;
                 } else {
                     if (pe < 12) epsPerHtml += `<p class="text-[#1a73e8] font-medium mt-2">本益比低於 12 倍，股價可能被低估，或屬景氣循環股逢高獲利現象。</p>`;
-                    else if (pe > 25) epsPerHtml += `<p class="text-[#d93025] font-medium mt-2">本益比高於 25 倍，市場對其期待極高，需留意股價過熱風險。</p>`;
+                    else if (pe > 25) epsPerHtml += `<p class="text-[#d93025] font-medium mt-2">本益比高於 25 倍，市場期待極高，需留意股價過熱風險。</p>`;
                     else epsPerHtml += `<p class="text-[#1e8e3e] font-medium mt-2">本益比介於常態區間 (12~25 倍)，估值相對合理。</p>`;
                 }
             } else {
@@ -1013,6 +1015,7 @@
             const highs = globalHistoricalData.high;
             const lows = globalHistoricalData.low;
             const vols = globalHistoricalData.volume;
+            const insts = globalHistoricalData.inst || [];
             const ma5 = globalHistoricalData.ma5;
             const ma20 = globalHistoricalData.ma20;
             const ma60 = globalHistoricalData.ma60;
@@ -1038,21 +1041,20 @@
             const ctx = document.getElementById('priceChart').getContext('2d');
             if (window.priceChartInstance) window.priceChartInstance.destroy();
             
+            const datasets = [
+                { type: 'bar', label: '成交量', data: vols, backgroundColor: volColors, yAxisID: 'y1', order: 10, barPercentage: 0.8 },
+                { type: 'line', label: '收盤價', data: closes, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, tension: 0.1, order: 2, yAxisID: 'y' },
+                { type: 'line', label: '5MA(周線)', data: ma5, borderColor: '#f9ab00', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, tension: 0.1, order: 3, yAxisID: 'y' },
+                { type: 'line', label: '20MA(月線)', data: ma20, borderColor: '#1e8e3e', borderWidth: 1.5, pointRadius: 0, tension: 0.1, order: 4, yAxisID: 'y' },
+                { type: 'line', label: '壓力線(近20日高)', data: high20, borderColor: '#d93025', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 5, yAxisID: 'y' },
+                { type: 'line', label: '支撐線(近20日低)', data: low20, borderColor: '#3c4043', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 6, yAxisID: 'y' },
+                { type: 'line', label: '[黃金交叉（買進訊號）]', data: buySignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#d93025', pointBorderColor: '#d93025', rotation: 0, order: 1, yAxisID: 'y' },
+                { type: 'line', label: '[死亡交叉（賣出訊號）]', data: sellSignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#1e8e3e', pointBorderColor: '#1e8e3e', rotation: 180, order: 0, yAxisID: 'y' }
+            ];
+
             window.priceChartInstance = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [
-                        { type: 'bar', label: '成交量', data: vols, backgroundColor: volColors, yAxisID: 'y1', order: 10, barPercentage: 0.8 },
-                        { type: 'line', label: '收盤價', data: closes, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, tension: 0.1, order: 2, yAxisID: 'y' },
-                        { type: 'line', label: '5MA(周線)', data: ma5, borderColor: '#f9ab00', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, tension: 0.1, order: 3, yAxisID: 'y' },
-                        { type: 'line', label: '20MA(月線)', data: ma20, borderColor: '#1e8e3e', borderWidth: 1.5, pointRadius: 0, tension: 0.1, order: 4, yAxisID: 'y' },
-                        { type: 'line', label: '壓力線(近20日高)', data: high20, borderColor: '#d93025', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 5, yAxisID: 'y' },
-                        { type: 'line', label: '支撐線(近20日低)', data: low20, borderColor: '#3c4043', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 6, yAxisID: 'y' },
-                        { type: 'line', label: '[黃金交叉（買進訊號）]', data: buySignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#d93025', pointBorderColor: '#d93025', rotation: 0, order: 1, yAxisID: 'y' },
-                        { type: 'line', label: '[死亡交叉（賣出訊號）]', data: sellSignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#1e8e3e', pointBorderColor: '#1e8e3e', rotation: 180, order: 0, yAxisID: 'y' }
-                    ]
-                },
+                data: { labels: dates, datasets: datasets },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -1061,7 +1063,7 @@
                     scales: {
                         x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10 } } },
                         y: { type: 'linear', display: true, position: 'right', grid: { color: '#f1f3f4' } },
-                        y1: { type: 'linear', display: false, position: 'left', min: 0, max: Math.max(...vols) * 4 }
+                        y1: { type: 'linear', display: false, position: 'left', min: 0, max: Math.max(...vols) * 6 }
                     }
                 }
             });
@@ -1162,7 +1164,7 @@
                 else if (vpTag === "價漲量縮" || vpTag === "價漲量減") { vpDesc += "漲勢恐為曇花一現，仍待整理。"; }
                 else if (vpTag === "價漲量平") { vpDesc += "價量出現背離，漲勢難以持久。"; }
             } else if (trendPhase === "已漲了一段時間") {
-                if (vpTag === "價平量增") { vpDesc += "漲勢暫時受阻，評估尚有高點可期。"; }
+                if (vpTag === "價平量增") { vpDesc += "漲勢受阻，評估尚有高點可期。"; }
                 else if (vpTag === "價漲量增") { vpDesc += "若屬近期巨量，需防範主力出貨徵兆。"; }
                 else if (vpTag === "價漲量縮" || vpTag === "價漲量減") { vpDesc += "留意行情觸頂，三日內易生反轉。"; }
                 else if (vpTag === "價漲量平") { vpDesc += "行情未見反轉，應持續觀察買氣力道。"; }
@@ -1300,6 +1302,7 @@
 
         function calculate() {
             const stockDisplayName = document.getElementById('stockInput').value.trim() || '未填寫';
+            // 強制抓取畫面上自動填入的現價
             const currentPriceInput = document.getElementById('currentPrice').value;
             const costPriceInput = document.getElementById('costPrice').value;
 
