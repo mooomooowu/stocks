@@ -148,6 +148,16 @@
                     </div>
                 </div>
 
+                <!-- 歷史紀錄區 -->
+                <div class="google-card p-4 hidden" id="historySection">
+                    <div class="flex justify-between items-center mb-3 border-b border-[#dadce0] pb-2">
+                        <h3 class="text-[15px] font-medium text-[#202124]">近期計算紀錄</h3>
+                        <button onclick="clearHistory()" class="text-xs text-[#d93025] hover:bg-[#fce8e6] px-2 py-1 rounded transition">清除紀錄</button>
+                    </div>
+                    <div id="historyList" class="flex overflow-x-auto gap-3 pb-2 hide-scrollbar">
+                    </div>
+                </div>
+
                 <!-- 視覺化分析結果區 (預設隱藏) -->
                 <div id="visualOutput" class="hidden animate-[fadeIn_0.3s_ease-out] bg-white space-y-6">
 
@@ -155,7 +165,7 @@
                     <div id="chartSection" class="hidden google-card p-5 md:p-6">
                         <div class="flex items-center justify-between mb-4 border-b border-[#dadce0] pb-3">
                             <h3 class="text-[16px] font-medium text-[#202124]">近期走勢圖與支撐壓力</h3>
-                            <span class="text-xs font-mono text-[#5f6368] bg-[#f1f3f4] px-2 py-1 rounded">近 60 日技術面含外資動向</span>
+                            <span class="text-xs font-mono text-[#5f6368] bg-[#f1f3f4] px-2 py-1 rounded">近 60 日技術面</span>
                         </div>
                         
                         <div class="w-full h-[320px] bg-white border border-[#dadce0] rounded-md p-2 mb-6">
@@ -649,7 +659,7 @@
     </div>
 
     <script>
-        let globalHistoricalData = { date: [], open: [], high: [], low: [], close: [], volume: [], inst: [], ma5: [], ma20: [], ma60: [], eps: null, pe: null };
+        let globalHistoricalData = { date: [], open: [], high: [], low: [], close: [], volume: [], ma5: [], ma20: [], ma60: [], eps: null, pe: null };
         let queryCodeInfo = { code: "--", name: "--" };
 
         function switchTab(tabId) {
@@ -681,27 +691,81 @@
             });
         }
 
-        // 30 條高併發代理防阻擋引擎
+        // 統一呼叫 TWSE / TPEX OpenAPI 取代 FinMind
+        async function fetchOpenApiBasicData(code, currentPrice) {
+            let pe = null;
+            let eps = null;
+            try {
+                const twseUrl = `https://openapi.twse.com.tw/v1/exchangeReport/BWIBBU_d`;
+                let res = await fetch(twseUrl).catch(() => null);
+                let data = res ? await res.json().catch(() => null) : null;
+                
+                if (!data) {
+                    const proxyRes = await fetchWithProxyRace(twseUrl);
+                    if (proxyRes.status === 200) data = proxyRes.data;
+                }
+
+                if (data && Array.isArray(data)) {
+                    const stockInfo = data.find(item => item.Code === code);
+                    if (stockInfo) {
+                        pe = parseFloat(stockInfo.PEratio);
+                        if (isNaN(pe) || stockInfo.PEratio === '-' || stockInfo.PEratio === '0.00' || pe <= 0) {
+                            return { pe: 0, eps: -1 };
+                        }
+                        return { pe: pe, eps: currentPrice / pe };
+                    }
+                }
+
+                const tpexUrl = `https://www.tpex.org.tw/openapi/v1/tpex_mainboard_quotes`;
+                res = await fetch(tpexUrl).catch(() => null);
+                data = res ? await res.json().catch(() => null) : null;
+                
+                if (!data) {
+                    const proxyRes = await fetchWithProxyRace(tpexUrl);
+                    if (proxyRes.status === 200) data = proxyRes.data;
+                }
+
+                if (data && Array.isArray(data)) {
+                    const stockInfo = data.find(item => item.SecuritiesCompanyCode === code);
+                    if (stockInfo) {
+                        pe = parseFloat(stockInfo.PERatio);
+                        if (isNaN(pe) || stockInfo.PERatio === '-' || stockInfo.PERatio === '0.00' || pe <= 0) {
+                            return { pe: 0, eps: -1 };
+                        }
+                        return { pe: pe, eps: currentPrice / pe };
+                    }
+                }
+            } catch (e) {
+                console.log("OpenAPI fetch err");
+            }
+            return { pe: null, eps: null };
+        }
+
+        // 40 條極致併發代理，徹底突破延遲與阻擋
         async function fetchWithProxyRace(targetUrl) {
+            const cacheBuster = targetUrl.includes('?') ? `&_t=${Date.now()}` : `?_t=${Date.now()}`;
+            const encodeUrl = encodeURIComponent(targetUrl + cacheBuster);
+            const rawUrl = targetUrl + cacheBuster;
+            
             const baseProxies = [
-                (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
-                (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-                (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
-                (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
-                (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-                (u) => `https://proxy.cors.sh/${u}`,
-                (u) => `https://api.cors.lol/?url=${encodeURIComponent(u)}`,
-                (u) => `https://corsproxy.org/?${encodeURIComponent(u)}`,
-                (u) => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(u)}`
+                (u, eu) => `https://api.allorigins.win/get?url=${eu}`,
+                (u, eu) => `https://api.codetabs.com/v1/proxy?quest=${eu}`,
+                (u, eu) => `https://corsproxy.io/?url=${eu}`,
+                (u, eu) => `https://api.allorigins.win/raw?url=${eu}`,
+                (u, eu) => `https://thingproxy.freeboard.io/fetch/${u}`,
+                (u, eu) => `https://api.cors.lol/?url=${eu}`,
+                (u, eu) => `https://corsproxy.org/?${eu}`,
+                (u, eu) => `https://cors-proxy.htmldriven.com/?url=${eu}`
             ];
 
             const promises = [];
             
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 40; i++) {
                 const proxyFn = baseProxies[i % baseProxies.length];
                 const cb = `&_rnd=${Math.random().toString(36).substring(2)}${Date.now()}${i}`;
                 const dynRawUrl = targetUrl + cb;
-                const pUrl = proxyFn(dynRawUrl);
+                const dynEncUrl = encodeURIComponent(dynRawUrl);
+                const pUrl = proxyFn(dynRawUrl, dynEncUrl);
                 const isAllOriginsGet = pUrl.includes('/get?url=');
 
                 promises.push(new Promise(async (resolve, reject) => {
@@ -730,9 +794,9 @@
                         }
 
                         if (data?.chart?.error?.code === 'Not Found' || data?.quoteResponse?.error) return resolve({ status: 404 });
-                        if (data?.quoteResponse?.result) return resolve({ status: 200, data: data }); 
-                        if (data?.chart?.result?.length > 0) return resolve({ status: 200, data: data });
-                        if (data?.msg === 'success' && Array.isArray(data?.data)) return resolve({ status: 200, data: data });
+                        if (data?.quoteResponse?.result) { controller.abort(); return resolve({ status: 200, data: data }); }
+                        if (data?.chart?.result?.length > 0) { controller.abort(); return resolve({ status: 200, data: data }); }
+                        if (data?.msg === 'success' && Array.isArray(data?.data)) { controller.abort(); return resolve({ status: 200, data: data }); }
 
                         reject(new Error('Invalid structure'));
                     } catch (err) {
@@ -746,36 +810,6 @@
                 return await Promise.any(promises); 
             } catch (e) {
                 return { status: 'error' };
-            }
-        }
-
-        // 專屬 FinMind API 抓取 EPS 與 PE (解決 API 不穩問題)
-        async function fetchFinMindBasicData(code, currentPrice) {
-            try {
-                const sd = new Date(); sd.setDate(sd.getDate() - 14);
-                const sYMD = sd.toISOString().split('T')[0];
-                const eYMD = new Date().toISOString().split('T')[0];
-                const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPER&data_id=${code}&start_date=${sYMD}&end_date=${eYMD}`;
-                
-                let res = await fetch(fmUrl).catch(() => null);
-                let data = res ? await res.json().catch(() => null) : null;
-
-                if (!data || data.msg !== 'success') {
-                    const proxyRes = await fetchWithProxyRace(fmUrl);
-                    if (proxyRes.status === 200) data = proxyRes.data;
-                }
-
-                if (data && data.msg === 'success' && data.data && data.data.length > 0) {
-                    const latestData = data.data[data.data.length - 1];
-                    let pe = parseFloat(latestData.PER);
-                    if (isNaN(pe) || pe <= 0) {
-                        return { pe: 0, eps: -1 }; 
-                    }
-                    return { pe: pe, eps: currentPrice / pe };
-                }
-                return { pe: null, eps: null };
-            } catch (e) {
-                return { pe: null, eps: null };
             }
         }
 
@@ -804,20 +838,21 @@
             let found = false;
 
             try {
-                // 優先使用 FinMind 抓取 K 線以保持資料格式的一致與正確性
                 const sd = new Date();
                 sd.setDate(sd.getDate() - 150);
                 const sYMD = sd.toISOString().split('T')[0];
                 const eYMD = new Date().toISOString().split('T')[0];
                 
+                // K線改由 FinMind 取出
                 const targetUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${codeInput}&start_date=${sYMD}&end_date=${eYMD}`;
                 
+                // 優先嘗試直連 FinMind，失敗再走 Proxy Race
                 let result = { status: 'error' };
                 try {
                     let res = await fetch(targetUrl);
                     if(res.ok) {
                         let j = await res.json();
-                        if(j.msg === 'success' && j.data && j.data.length > 0) result = { status: 200, data: j };
+                        if(j.msg === 'success' && j.data) result = { status: 200, data: j };
                     }
                 } catch(e) {}
                 
@@ -837,7 +872,9 @@
                         if (nameRes.status === 200 && nameRes.data?.quotes?.length > 0) {
                             name = nameRes.data.quotes[0].shortName || nameRes.data.quotes[0].longName || codeInput;
                         }
-                    } catch (e) { }
+                    } catch (e) {
+                        console.log("Name fallback err");
+                    }
 
                     document.getElementById('stockInput').value = `${name} (${codeInput})`;
                     document.getElementById('currentPrice').value = price;
@@ -847,7 +884,8 @@
                     showMessage(`載入成功：${name} (${price})`);
                     found = true;
 
-                    const basicData = await fetchFinMindBasicData(codeInput, price);
+                    // 抓取基本面資料 (改用 TWSE OpenAPI)
+                    const basicData = await fetchOpenApiBasicData(codeInput, price);
 
                     const validData = stockData.map(item => ({
                         date: item.date.substring(5).replace('-', '/'),
@@ -891,15 +929,14 @@
                         high20: high20Arr,
                         low20: low20Arr,
                         eps: basicData.eps,
-                        pe: basicData.pe,
-                        inst: [] 
+                        pe: basicData.pe
                     };
                     
                     renderChartAndAnalysis();
                     updateSummaryTable(price, parseFloat(document.getElementById('costPrice').value || 0));
                 }
             } catch (e) {
-                console.log("Fetch error");
+                console.log("Fetch error", e);
             }
 
             if (!found) {
@@ -910,6 +947,66 @@
             
             searchBtn.innerText = "查詢";
             searchBtn.disabled = false;
+        }
+
+        // 儲存至歷史紀錄
+        function saveToHistory(stock, price, cost) {
+            if (!stock || !price || !cost) return;
+            let history = JSON.parse(localStorage.getItem('bandCalcHistory')) || [];
+            
+            if (history.length > 0 && history[0].stock === stock && history[0].price === price && history[0].cost === cost) {
+                return; 
+            }
+            
+            const newItem = {
+                id: Date.now(),
+                time: new Date().toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }),
+                stock: stock,
+                price: price,
+                cost: cost
+            };
+            
+            history.unshift(newItem);
+            if (history.length > 10) history = history.slice(0, 10);
+            localStorage.setItem('bandCalcHistory', JSON.stringify(history));
+            renderHistory();
+        }
+
+        // 渲染歷史紀錄 UI
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('bandCalcHistory')) || [];
+            const sec = document.getElementById('historySection');
+            const list = document.getElementById('historyList');
+            
+            if (!sec || !list) return;
+
+            if (history.length === 0) {
+                sec.classList.add('hidden');
+                return;
+            }
+            sec.classList.remove('hidden');
+            list.innerHTML = history.map(h => `
+                <div class="flex-shrink-0 min-w-[160px] border border-[#dadce0] rounded-md p-3 bg-[#f8f9fa] cursor-pointer hover:border-[#1a73e8] transition" onclick="applyHistory('${h.stock}', ${h.cost})">
+                    <div class="text-[10px] text-[#5f6368] mb-1">${h.time}</div>
+                    <div class="font-medium text-sm text-[#202124] mb-1 truncate">${h.stock}</div>
+                    <div class="text-xs text-[#3c4043]">現價: <span class="font-mono">${h.price}</span></div>
+                    <div class="text-xs text-[#3c4043]">成本: <span class="font-mono text-[#1a73e8]">${h.cost}</span></div>
+                </div>
+            `).join('');
+        }
+
+        // 套用歷史紀錄
+        function applyHistory(stock, cost) {
+            document.getElementById('stockInput').value = stock;
+            document.getElementById('costPrice').value = cost;
+            searchStock(); 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 清除歷史紀錄
+        function clearHistory() {
+            localStorage.removeItem('bandCalcHistory');
+            renderHistory();
         }
 
         function renderEpsPerAnalysis() {
@@ -1005,7 +1102,7 @@
         }
 
         function renderChartAndAnalysis() {
-            if (globalHistoricalData.close.length < 20) return;
+            if (!globalHistoricalData.close || globalHistoricalData.close.length < 20) return;
             const chartSectionEl = document.getElementById('chartSection');
             if (chartSectionEl) chartSectionEl.classList.remove('hidden');
 
@@ -1015,7 +1112,6 @@
             const highs = globalHistoricalData.high;
             const lows = globalHistoricalData.low;
             const vols = globalHistoricalData.volume;
-            const insts = globalHistoricalData.inst || [];
             const ma5 = globalHistoricalData.ma5;
             const ma20 = globalHistoricalData.ma20;
             const ma60 = globalHistoricalData.ma60;
@@ -1024,12 +1120,12 @@
 
             const buySignals = closes.map((c, i) => {
                 if (i === 0) return null;
-                if (ma5[i] > ma20[i] && ma5[i-1] <= ma20[i-1]) return lows[i] * 0.98; // 黃金交叉
+                if (ma5[i] !== null && ma20[i] !== null && ma5[i] > ma20[i] && ma5[i-1] <= ma20[i-1]) return lows[i] * 0.98; // 黃金交叉
                 return null;
             });
             const sellSignals = closes.map((c, i) => {
                 if (i === 0) return null;
-                if (ma5[i] < ma20[i] && ma5[i-1] >= ma20[i-1]) return highs[i] * 1.02; // 死亡交叉
+                if (ma5[i] !== null && ma20[i] !== null && ma5[i] < ma20[i] && ma5[i-1] >= ma20[i-1]) return highs[i] * 1.02; // 死亡交叉
                 return null;
             });
 
@@ -1038,23 +1134,26 @@
                 return closes[i] >= opens[i] ? 'rgba(217, 48, 37, 0.6)' : 'rgba(30, 142, 62, 0.6)';
             });
 
-            const ctx = document.getElementById('priceChart').getContext('2d');
+            const ctx = document.getElementById('priceChart');
+            if (!ctx) return;
+            const context = ctx.getContext('2d');
             if (window.priceChartInstance) window.priceChartInstance.destroy();
             
-            const datasets = [
-                { type: 'bar', label: '成交量', data: vols, backgroundColor: volColors, yAxisID: 'y1', order: 10, barPercentage: 0.8 },
-                { type: 'line', label: '收盤價', data: closes, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, tension: 0.1, order: 2, yAxisID: 'y' },
-                { type: 'line', label: '5MA(周線)', data: ma5, borderColor: '#f9ab00', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, tension: 0.1, order: 3, yAxisID: 'y' },
-                { type: 'line', label: '20MA(月線)', data: ma20, borderColor: '#1e8e3e', borderWidth: 1.5, pointRadius: 0, tension: 0.1, order: 4, yAxisID: 'y' },
-                { type: 'line', label: '壓力線(近20日高)', data: high20, borderColor: '#d93025', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 5, yAxisID: 'y' },
-                { type: 'line', label: '支撐線(近20日低)', data: low20, borderColor: '#3c4043', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 6, yAxisID: 'y' },
-                { type: 'line', label: '[黃金交叉（買進訊號）]', data: buySignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#d93025', pointBorderColor: '#d93025', rotation: 0, order: 1, yAxisID: 'y' },
-                { type: 'line', label: '[死亡交叉（賣出訊號）]', data: sellSignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#1e8e3e', pointBorderColor: '#1e8e3e', rotation: 180, order: 0, yAxisID: 'y' }
-            ];
-
-            window.priceChartInstance = new Chart(ctx, {
+            window.priceChartInstance = new Chart(context, {
                 type: 'line',
-                data: { labels: dates, datasets: datasets },
+                data: {
+                    labels: dates,
+                    datasets: [
+                        { type: 'bar', label: '成交量', data: vols, backgroundColor: volColors, yAxisID: 'y1', order: 10, barPercentage: 0.8 },
+                        { type: 'line', label: '收盤價', data: closes, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, tension: 0.1, order: 2, yAxisID: 'y' },
+                        { type: 'line', label: '5MA(周線)', data: ma5, borderColor: '#f9ab00', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, tension: 0.1, order: 3, yAxisID: 'y' },
+                        { type: 'line', label: '20MA(月線)', data: ma20, borderColor: '#1e8e3e', borderWidth: 1.5, pointRadius: 0, tension: 0.1, order: 4, yAxisID: 'y' },
+                        { type: 'line', label: '壓力線(近20日高)', data: high20, borderColor: '#d93025', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 5, yAxisID: 'y' },
+                        { type: 'line', label: '支撐線(近20日低)', data: low20, borderColor: '#3c4043', borderWidth: 1, borderDash: [3, 3], pointRadius: 0, order: 6, yAxisID: 'y' },
+                        { type: 'line', label: '[黃金交叉（買進訊號）]', data: buySignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#d93025', pointBorderColor: '#d93025', rotation: 0, order: 1, yAxisID: 'y' },
+                        { type: 'line', label: '[死亡交叉（賣出訊號）]', data: sellSignals, showLine: false, pointStyle: 'triangle', pointRadius: 6, pointBackgroundColor: '#1e8e3e', pointBorderColor: '#1e8e3e', rotation: 180, order: 0, yAxisID: 'y' }
+                    ]
+                },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -1063,7 +1162,7 @@
                     scales: {
                         x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10 } } },
                         y: { type: 'linear', display: true, position: 'right', grid: { color: '#f1f3f4' } },
-                        y1: { type: 'linear', display: false, position: 'left', min: 0, max: Math.max(...vols) * 6 }
+                        y1: { type: 'linear', display: false, position: 'left', min: 0, max: Math.max(...vols) * 4 }
                     }
                 }
             });
@@ -1164,7 +1263,7 @@
                 else if (vpTag === "價漲量縮" || vpTag === "價漲量減") { vpDesc += "漲勢恐為曇花一現，仍待整理。"; }
                 else if (vpTag === "價漲量平") { vpDesc += "價量出現背離，漲勢難以持久。"; }
             } else if (trendPhase === "已漲了一段時間") {
-                if (vpTag === "價平量增") { vpDesc += "漲勢受阻，評估尚有高點可期。"; }
+                if (vpTag === "價平量增") { vpDesc += "漲勢暫時受阻，評估尚有高點可期。"; }
                 else if (vpTag === "價漲量增") { vpDesc += "若屬近期巨量，需防範主力出貨徵兆。"; }
                 else if (vpTag === "價漲量縮" || vpTag === "價漲量減") { vpDesc += "留意行情觸頂，三日內易生反轉。"; }
                 else if (vpTag === "價漲量平") { vpDesc += "行情未見反轉，應持續觀察買氣力道。"; }
@@ -1218,14 +1317,10 @@
             // 操盤手視角及亮燈標籤 (結合均線方向判斷)
             const cMa5 = ma5[ma5.length - 1];
             const pMa5 = ma5[ma5.length - 2];
-            const ma5Up = cMa5 > pMa5;
+            const ma5Up = cMa5 !== null && pMa5 !== null ? cMa5 > pMa5 : true;
             
             const pMa20 = ma20[ma20.length - 2];
-            const ma20Up = cMa20 > pMa20;
-
-            const cMa60 = ma60[ma60.length - 1];
-            const pMa60 = ma60[ma60.length - 2];
-            const ma60Up = cMa60 > pMa60;
+            const ma20Up = cMa20 !== null && pMa20 !== null ? cMa20 > pMa20 : true;
 
             const hAdv = document.getElementById('holderAdvice');
             const eAdv = document.getElementById('entryAdvice');
@@ -1235,12 +1330,12 @@
             let hBadgeText = "", hBadgeClass = "";
             let eBadgeText = "", eBadgeClass = "";
 
-            if (tClose > cMa20 && ma20Up) {
+            if (cMa20 !== null && tClose > cMa20 && ma20Up) {
                 if (hAdv) hAdv.innerText = "股價在 20MA 月線之上，趨勢偏多。均線方向往上具備支撐力，建議持股續抱。若 5MA 亦在上方，代表近期買氣強勁。";
                 hBadgeText = "續抱"; hBadgeClass = "bg-[#1e8e3e] text-white border-[#1e8e3e]";
                 if (eAdv) eAdv.innerText = "短天期均線呈現多頭排列，逢回測支撐未破為良好切入時機。帶量黃金交叉出現時為買進點，乖離過大忌盲目追高。";
                 eBadgeText = "買入"; eBadgeClass = "bg-[#1a73e8] text-white border-[#1a73e8]";
-            } else if (tClose < cMa20 && !ma20Up) {
+            } else if (cMa20 !== null && tClose < cMa20 && !ma20Up) {
                 if (hAdv) hAdv.innerText = "股價跌破月線且均線向下，賣壓沉重。近期買入者皆處於虧損狀態，持有者宜設定停損點，確實斷尾保留資金實力。";
                 hBadgeText = "賣出"; hBadgeClass = "bg-[#d93025] text-white border-[#d93025]";
                 if (eAdv) eAdv.innerText = "大方向看空，如同下坡溜滑梯壓力極大，避免貿然伸手承接。請耐心等待均線走平或爆量止跌訊號，維持空手觀望。";
@@ -1268,7 +1363,6 @@
         }
 
         function runAutoDetection() {
-            // 這個獨立呼叫目前作為預防機制，核心已整合進 renderChartAndVolPrice
             const labelEl = document.getElementById('matrixDetectionLabel');
             if (labelEl) labelEl.innerText = "自動判定結果";
         }
@@ -1302,7 +1396,6 @@
 
         function calculate() {
             const stockDisplayName = document.getElementById('stockInput').value.trim() || '未填寫';
-            // 強制抓取畫面上自動填入的現價
             const currentPriceInput = document.getElementById('currentPrice').value;
             const costPriceInput = document.getElementById('costPrice').value;
 
@@ -1365,41 +1458,46 @@
                 progressPct = 5;
                 statusRange = `小於 ${costPrice}`;
                 judgement = "【跌破成本】處於法人收貨盤整或弱勢狀態。";
-                document.getElementById('dot-cost').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                const dotCost = document.getElementById('dot-cost');
+                if(dotCost) dotCost.classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
             } else if (currentPrice >= costPrice && currentPrice < p104) {
                 waveTitle = "醞釀期！尚未正式發動";
                 waveDesc = "現價高於成本，蓄勢挑戰 1.04 倍突破點。";
                 progressPct = 15;
                 statusRange = `${costPrice} ~ ${p104}`;
                 judgement = "【醞釀期】尚未正式發動，待站穩發動點。";
-                document.getElementById('dot-cost').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                const dotCost = document.getElementById('dot-cost');
+                if(dotCost) dotCost.classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
             } else if (currentPrice >= p104 && currentPrice < p120) {
                 waveTitle = "已突破成本！進入上漲初期";
                 waveDesc = "站穩 1.04 倍，朝第一波高點邁進。";
                 progressPct = 35;
                 statusRange = `${p104} ~ ${p120}`;
                 judgement = "【第一攻擊區】已發動，朝第一波高點邁進。";
-                document.getElementById('dot-cost').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
-                document.getElementById('dot-104').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                ['cost','104'].forEach(id => {
+                    const dot = document.getElementById(`dot-${id}`);
+                    if(dot) dot.classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                });
             } else if (currentPrice >= p120 && currentPrice < p140) {
                 waveTitle = "挑戰關卡二！面臨前波壓力";
                 waveDesc = "已達 1.2 倍目標，整理後挑戰 1.4 倍。";
                 progressPct = 60;
                 statusRange = `${p120} ~ ${p140}`;
                 judgement = "【第二攻擊區】面臨第一波高點壓力，朝第二波邁進。";
-                document.getElementById('dot-cost').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
-                document.getElementById('dot-104').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
-                document.getElementById('dot-120').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                ['cost','104','120'].forEach(id => {
+                    const dot = document.getElementById(`dot-${id}`);
+                    if(dot) dot.classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                });
             } else if (currentPrice >= p140 && currentPrice < p170) {
                 waveTitle = "極端高位區！留意下殺風險";
                 waveDesc = "突破 1.4 倍，波動加劇，留意獲利了結賣壓。";
                 progressPct = 85;
                 statusRange = `${p140} ~ ${p170}`;
                 judgement = "【極端高位區】現價過高，隨時有下殺風險。";
-                document.getElementById('dot-cost').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
-                document.getElementById('dot-104').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
-                document.getElementById('dot-120').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
-                document.getElementById('dot-140').classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                ['cost','104','120','140'].forEach(id => {
+                    const dot = document.getElementById(`dot-${id}`);
+                    if(dot) dot.classList.replace('bg-[#dadce0]', 'bg-[#5f6368]');
+                });
             } else {
                 waveTitle = "末升段收割區！屬於危險區域";
                 waveDesc = "已達超越 1.7 倍極限，切忌盲目追高。";
@@ -1425,6 +1523,9 @@
             }
 
             updateSummaryTable(currentPrice, costPrice);
+
+            // 儲存至歷史紀錄
+            saveToHistory(stockDisplayName, currentPrice, costPrice);
 
             const report = 
 `股票標的： [${stockDisplayName}]
@@ -1557,6 +1658,9 @@
             document.body.appendChild(div);
             setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 3000);
         }
+
+        // 載入時渲染歷史紀錄
+        document.addEventListener('DOMContentLoaded', renderHistory);
     </script>
 </body>
 </html>
