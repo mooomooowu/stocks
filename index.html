@@ -691,120 +691,87 @@
             });
         }
 
-        // 統一呼叫 TWSE / TPEX OpenAPI 取代 FinMind
-        async function fetchOpenApiBasicData(code, currentPrice) {
-            let pe = null;
-            let eps = null;
-            try {
-                const twseUrl = `https://openapi.twse.com.tw/v1/exchangeReport/BWIBBU_d`;
-                let res = await fetch(twseUrl).catch(() => null);
-                let data = res ? await res.json().catch(() => null) : null;
-                
-                if (!data) {
-                    const proxyRes = await fetchWithProxyRace(twseUrl);
-                    if (proxyRes.status === 200) data = proxyRes.data;
-                }
-
-                if (data && Array.isArray(data)) {
-                    const stockInfo = data.find(item => item.Code === code);
-                    if (stockInfo) {
-                        pe = parseFloat(stockInfo.PEratio);
-                        if (isNaN(pe) || stockInfo.PEratio === '-' || stockInfo.PEratio === '0.00' || pe <= 0) {
-                            return { pe: 0, eps: -1 };
-                        }
-                        return { pe: pe, eps: currentPrice / pe };
-                    }
-                }
-
-                const tpexUrl = `https://www.tpex.org.tw/openapi/v1/tpex_mainboard_quotes`;
-                res = await fetch(tpexUrl).catch(() => null);
-                data = res ? await res.json().catch(() => null) : null;
-                
-                if (!data) {
-                    const proxyRes = await fetchWithProxyRace(tpexUrl);
-                    if (proxyRes.status === 200) data = proxyRes.data;
-                }
-
-                if (data && Array.isArray(data)) {
-                    const stockInfo = data.find(item => item.SecuritiesCompanyCode === code);
-                    if (stockInfo) {
-                        pe = parseFloat(stockInfo.PERatio);
-                        if (isNaN(pe) || stockInfo.PERatio === '-' || stockInfo.PERatio === '0.00' || pe <= 0) {
-                            return { pe: 0, eps: -1 };
-                        }
-                        return { pe: pe, eps: currentPrice / pe };
-                    }
-                }
-            } catch (e) {
-                console.log("OpenAPI fetch err");
-            }
-            return { pe: null, eps: null };
-        }
-
-        // 40 條極致併發代理，徹底突破延遲與阻擋
+        // 終極防阻擋機制：多重併發競速演算法 (Promise Racing Algorithm)
         async function fetchWithProxyRace(targetUrl) {
             const cacheBuster = targetUrl.includes('?') ? `&_t=${Date.now()}` : `?_t=${Date.now()}`;
-            const encodeUrl = encodeURIComponent(targetUrl + cacheBuster);
             const rawUrl = targetUrl + cacheBuster;
             
             const baseProxies = [
                 (u, eu) => `https://api.allorigins.win/get?url=${eu}`,
+                (u, eu) => `https://api.allorigins.hexlet.app/get?url=${eu}`,
                 (u, eu) => `https://api.codetabs.com/v1/proxy?quest=${eu}`,
                 (u, eu) => `https://corsproxy.io/?url=${eu}`,
-                (u, eu) => `https://api.allorigins.win/raw?url=${eu}`,
                 (u, eu) => `https://thingproxy.freeboard.io/fetch/${u}`,
+                (u, eu) => `https://api.allorigins.win/raw?url=${eu}`,
+                (u, eu) => `https://proxy.cors.sh/${u}`,
+                (u, eu) => `https://cors.eu.org/${u}`,
                 (u, eu) => `https://api.cors.lol/?url=${eu}`,
-                (u, eu) => `https://corsproxy.org/?${eu}`,
-                (u, eu) => `https://cors-proxy.htmldriven.com/?url=${eu}`
+                (u, eu) => `https://corsproxy.org/?${eu}`
             ];
 
-            const promises = [];
-            
-            for (let i = 0; i < 40; i++) {
-                const proxyFn = baseProxies[i % baseProxies.length];
-                const cb = `&_rnd=${Math.random().toString(36).substring(2)}${Date.now()}${i}`;
-                const dynRawUrl = targetUrl + cb;
-                const dynEncUrl = encodeURIComponent(dynRawUrl);
-                const pUrl = proxyFn(dynRawUrl, dynEncUrl);
-                const isAllOriginsGet = pUrl.includes('/get?url=');
+            // 產生 50 條備援線路
+            const proxyGenerators = [];
+            for (let i = 0; i < 50; i++) {
+                const baseIndex = i % baseProxies.length;
+                const uniqueParam = `&_rndvar=${Math.random().toString(36).substring(2, 8)}${i}`;
+                proxyGenerators.push(() => {
+                    const urlWithRnd = rawUrl + uniqueParam;
+                    const encUrlWithRnd = encodeURIComponent(urlWithRnd);
+                    return {
+                        url: baseProxies[baseIndex](urlWithRnd, encUrlWithRnd),
+                        isAllOriginsGet: baseProxies[baseIndex].toString().includes('/get?url=')
+                    };
+                });
+            }
 
-                promises.push(new Promise(async (resolve, reject) => {
+            // 隨機打亂 50 條線路
+            for (let i = proxyGenerators.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [proxyGenerators[i], proxyGenerators[j]] = [proxyGenerators[j], proxyGenerators[i]];
+            }
+
+            // 同時發射 5 條進行競速
+            const selectedProxies = proxyGenerators.slice(0, 5).map(g => g());
+            const promises = selectedProxies.map(p => {
+                return new Promise(async (resolve, reject) => {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => {
                         controller.abort();
                         reject(new Error('Timeout'));
-                    }, 6000); 
+                    }, 8000); 
 
                     try {
-                        const res = await fetch(pUrl, { cache: 'no-store', signal: controller.signal });
+                        const res = await fetch(p.url, { cache: 'no-store', signal: controller.signal });
                         clearTimeout(timeoutId);
 
-                        if (res.status === 404) return resolve({ status: 404 });
                         if (!res.ok) return reject(new Error('HTTP Status ' + res.status));
 
                         let data;
-                        if (isAllOriginsGet) {
+                        if (p.isAllOriginsGet) {
                             const json = await res.json();
-                            if (json.status && json.status.http_code === 404) return resolve({ status: 404 });
                             if (!json.contents) return reject(new Error('Empty content'));
                             data = typeof json.contents === 'string' ? JSON.parse(json.contents) : json.contents;
                         } else {
-                            const text = await res.text();
-                            data = JSON.parse(text);
+                            data = await res.json();
                         }
 
-                        if (data?.chart?.error?.code === 'Not Found' || data?.quoteResponse?.error) return resolve({ status: 404 });
-                        if (data?.quoteResponse?.result) { controller.abort(); return resolve({ status: 200, data: data }); }
-                        if (data?.chart?.result?.length > 0) { controller.abort(); return resolve({ status: 200, data: data }); }
-                        if (data?.msg === 'success' && Array.isArray(data?.data)) { controller.abort(); return resolve({ status: 200, data: data }); }
+                        // 確認 Yahoo Finance 資料格式
+                        if (data?.chart?.result?.length > 0) { 
+                            controller.abort(); 
+                            return resolve({ status: 200, data: data }); 
+                        }
+                        if (data?.quoteResponse?.result) { 
+                            controller.abort(); 
+                            return resolve({ status: 200, data: data }); 
+                        }
 
                         reject(new Error('Invalid structure'));
                     } catch (err) {
                         clearTimeout(timeoutId);
                         reject(err);
                     }
-                }));
-            }
+                });
+            });
 
             try {
                 return await Promise.any(promises); 
@@ -835,108 +802,102 @@
                 return;
             }
 
+            let symbolsToTry = codeInput.includes('.') ? [codeInput] : [`${codeInput}.TW`, `${codeInput}.TWO`];
             let found = false;
 
-            try {
-                const sd = new Date();
-                sd.setDate(sd.getDate() - 150);
-                const sYMD = sd.toISOString().split('T')[0];
-                const eYMD = new Date().toISOString().split('T')[0];
-                
-                // K線改由 FinMind 取出
-                const targetUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${codeInput}&start_date=${sYMD}&end_date=${eYMD}`;
-                
-                // 優先嘗試直連 FinMind，失敗再走 Proxy Race
-                let result = { status: 'error' };
+            for (let sym of symbolsToTry) {
                 try {
-                    let res = await fetch(targetUrl);
-                    if(res.ok) {
-                        let j = await res.json();
-                        if(j.msg === 'success' && j.data) result = { status: 200, data: j };
-                    }
-                } catch(e) {}
-                
-                if (result.status !== 200) {
-                     result = await fetchWithProxyRace(targetUrl);
-                }
-
-                if (result.status === 200 && result.data && result.data.data && result.data.data.length > 0) {
-                    const stockData = result.data.data;
-                    const latestDay = stockData[stockData.length - 1];
-                    const price = latestDay.close;
+                    // Yahoo Finance Chart API
+                    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=1y`; 
+                    const result = await fetchWithProxyRace(url);
                     
-                    let name = codeInput;
-                    try {
-                        const nameUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${codeInput}&quotesCount=1`;
-                        const nameRes = await fetchWithProxyRace(nameUrl);
-                        if (nameRes.status === 200 && nameRes.data?.quotes?.length > 0) {
-                            name = nameRes.data.quotes[0].shortName || nameRes.data.quotes[0].longName || codeInput;
+                    if (result.status === 200 && result.data && result.data.chart.result.length > 0) {
+                        const parsedData = result.data;
+                        const price = parsedData.chart.result[0].meta.regularMarketPrice;
+                        let name = parsedData.chart.result[0].meta.symbol;
+                        
+                        // Yahoo Finance Quote API (抓取名稱與基本面)
+                        let eps = null, pe = null;
+                        try {
+                            const quoteUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${sym}`;
+                            const quoteRes = await fetchWithProxyRace(quoteUrl);
+                            if (quoteRes.status === 200 && quoteRes.data?.quoteResponse?.result?.length > 0) {
+                                const qData = quoteRes.data.quoteResponse.result[0];
+                                name = qData.shortName || qData.longName || name;
+                                eps = qData.epsTrailingTwelveMonths || null;
+                                pe = qData.trailingPE || null;
+                            }
+                        } catch(e) {}
+
+                        document.getElementById('stockInput').value = `${name} (${codeInput})`;
+                        document.getElementById('currentPrice').value = price;
+                        queryCodeInfo.code = codeInput;
+                        queryCodeInfo.name = name;
+                        
+                        showMessage(`載入成功：${name} (${price})`);
+                        found = true;
+
+                        if (parsedData.chart.result[0].timestamp && parsedData.chart.result[0].indicators.quote[0]) {
+                            const timestamps = parsedData.chart.result[0].timestamp;
+                            const quotes = parsedData.chart.result[0].indicators.quote[0];
+                            const validData = [];
+                            for(let i = 0; i < timestamps.length; i++) {
+                                if (quotes.close[i] !== null && quotes.volume[i] !== null) {
+                                    validData.push({ 
+                                        date: new Date(timestamps[i] * 1000).toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'}),
+                                        open: quotes.open[i],
+                                        high: quotes.high[i],
+                                        low: quotes.low[i],
+                                        close: quotes.close[i], 
+                                        volume: quotes.volume[i] / 1000 // 換算張數
+                                    });
+                                }
+                            }
+                            
+                            const fullCloses = validData.map(d => d.close);
+                            const ma5Full = getMA(fullCloses, 5);
+                            const ma20Full = getMA(fullCloses, 20);
+                            const ma60Full = getMA(fullCloses, 60);
+
+                            const last60 = validData.slice(-60);
+                            const last60Ma5 = ma5Full.slice(-60);
+                            const last60Ma20 = ma20Full.slice(-60);
+                            const last60Ma60 = ma60Full.slice(-60);
+                            
+                            const high20Arr = [];
+                            const low20Arr = [];
+                            for(let i = 0; i < last60.length; i++) {
+                                const endIdx = validData.length - 60 + i;
+                                const startIdx = Math.max(0, endIdx - 19);
+                                const windowData = validData.slice(startIdx, endIdx + 1);
+                                high20Arr.push(Math.max(...windowData.map(d => d.high)));
+                                low20Arr.push(Math.min(...windowData.map(d => d.low)));
+                            }
+
+                            globalHistoricalData = {
+                                date: last60.map(d => d.date),
+                                open: last60.map(d => d.open),
+                                high: last60.map(d => d.high),
+                                low: last60.map(d => d.low),
+                                close: last60.map(d => d.close),
+                                volume: last60.map(d => d.volume),
+                                ma5: last60Ma5,
+                                ma20: last60Ma20,
+                                ma60: last60Ma60,
+                                high20: high20Arr,
+                                low20: low20Arr,
+                                eps: eps,
+                                pe: pe
+                            };
+                            
+                            renderChartAndAnalysis();
+                            updateSummaryTable(price, parseFloat(document.getElementById('costPrice').value || 0));
                         }
-                    } catch (e) {
-                        console.log("Name fallback err");
+                        break;
                     }
-
-                    document.getElementById('stockInput').value = `${name} (${codeInput})`;
-                    document.getElementById('currentPrice').value = price;
-                    queryCodeInfo.code = codeInput;
-                    queryCodeInfo.name = name;
-                    
-                    showMessage(`載入成功：${name} (${price})`);
-                    found = true;
-
-                    // 抓取基本面資料 (改用 TWSE OpenAPI)
-                    const basicData = await fetchOpenApiBasicData(codeInput, price);
-
-                    const validData = stockData.map(item => ({
-                        date: item.date.substring(5).replace('-', '/'),
-                        open: item.open,
-                        high: item.max,
-                        low: item.min,
-                        close: item.close,
-                        volume: item.Trading_Volume / 1000 
-                    }));
-                    
-                    const fullCloses = validData.map(d => d.close);
-                    const ma5Full = getMA(fullCloses, 5);
-                    const ma20Full = getMA(fullCloses, 20);
-                    const ma60Full = getMA(fullCloses, 60);
-
-                    const last60 = validData.slice(-60);
-                    const last60Ma5 = ma5Full.slice(-60);
-                    const last60Ma20 = ma20Full.slice(-60);
-                    const last60Ma60 = ma60Full.slice(-60);
-                    
-                    const high20Arr = [];
-                    const low20Arr = [];
-                    for(let i = 0; i < last60.length; i++) {
-                        const endIdx = validData.length - 60 + i;
-                        const startIdx = Math.max(0, endIdx - 19);
-                        const windowData = validData.slice(startIdx, endIdx + 1);
-                        high20Arr.push(Math.max(...windowData.map(d => d.high)));
-                        low20Arr.push(Math.min(...windowData.map(d => d.low)));
-                    }
-
-                    globalHistoricalData = {
-                        date: last60.map(d => d.date),
-                        open: last60.map(d => d.open),
-                        high: last60.map(d => d.high),
-                        low: last60.map(d => d.low),
-                        close: last60.map(d => d.close),
-                        volume: last60.map(d => d.volume),
-                        ma5: last60Ma5,
-                        ma20: last60Ma20,
-                        ma60: last60Ma60,
-                        high20: high20Arr,
-                        low20: low20Arr,
-                        eps: basicData.eps,
-                        pe: basicData.pe
-                    };
-                    
-                    renderChartAndAnalysis();
-                    updateSummaryTable(price, parseFloat(document.getElementById('costPrice').value || 0));
+                } catch (e) {
+                    console.log("Fetch iteration error");
                 }
-            } catch (e) {
-                console.log("Fetch error", e);
             }
 
             if (!found) {
@@ -1102,7 +1063,7 @@
         }
 
         function renderChartAndAnalysis() {
-            if (!globalHistoricalData.close || globalHistoricalData.close.length < 20) return;
+            if (globalHistoricalData.close.length < 20) return;
             const chartSectionEl = document.getElementById('chartSection');
             if (chartSectionEl) chartSectionEl.classList.remove('hidden');
 
@@ -1134,12 +1095,10 @@
                 return closes[i] >= opens[i] ? 'rgba(217, 48, 37, 0.6)' : 'rgba(30, 142, 62, 0.6)';
             });
 
-            const ctx = document.getElementById('priceChart');
-            if (!ctx) return;
-            const context = ctx.getContext('2d');
+            const ctx = document.getElementById('priceChart').getContext('2d');
             if (window.priceChartInstance) window.priceChartInstance.destroy();
             
-            window.priceChartInstance = new Chart(context, {
+            window.priceChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: dates,
@@ -1396,6 +1355,7 @@
 
         function calculate() {
             const stockDisplayName = document.getElementById('stockInput').value.trim() || '未填寫';
+            // 強制抓取畫面上自動填入的現價
             const currentPriceInput = document.getElementById('currentPrice').value;
             const costPriceInput = document.getElementById('costPrice').value;
 
